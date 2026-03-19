@@ -1,0 +1,11 @@
+# ─── IMPORTANT: The .env file contains secrets (SECRET_TOKEN, POCKETHOST_TOKEN)
+# and must NEVER be committed to version control.
+.env
+
+# Node modules — install with: npm install
+node_modules/
+
+# OS & editor junk
+.DS_Store
+Thumbs.db
+*.log

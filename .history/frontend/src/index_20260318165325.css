@@ -1,0 +1,70 @@
+/* ── CSS Reset & Variables ─────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --cream:       #FAF8F3;
+  --cream-2:     #F2EDE4;
+  --cream-3:     #E8E0D3;
+  --brown:       #9B7653;
+  --brown-dark:  #7A5C3D;
+  --brown-light: #C4A882;
+  --brown-faint: #F0E9DF;
+  --charcoal:    #1C1917;
+  --charcoal-2:  #3D3530;
+  --charcoal-3:  #6B5E56;
+  --charcoal-4:  #9C8F87;
+  --red:         #B04040;
+  --red-light:   #FBF0F0;
+  --green:       #3D7A5C;
+  --green-light: #EDF6F1;
+  --white:       #FFFFFF;
+  --shadow-sm:   0 1px 3px rgba(28,25,23,0.08), 0 1px 2px rgba(28,25,23,0.04);
+  --shadow-md:   0 4px 16px rgba(28,25,23,0.10), 0 2px 4px rgba(28,25,23,0.06);
+  --shadow-lg:   0 16px 48px rgba(28,25,23,0.14), 0 4px 12px rgba(28,25,23,0.08);
+  --radius-sm:   6px;
+  --radius-md:   12px;
+  --radius-lg:   20px;
+  --font-serif:  'Playfair Display', Georgia, serif;
+  --font-sans:   'DM Sans', system-ui, sans-serif;
+  --ease:        cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html { font-size: 16px; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--cream);
+  color: var(--charcoal);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* ── Keyframe Animations ───────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.6); }
+}

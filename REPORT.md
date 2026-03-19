@@ -1,0 +1,218 @@
+# SecureNote — Conceptual Report
+
+**Subject:** Web Development Fundamentals & Architecture  
+**Assignment:** Full-Stack "SecureNote" Application  
+**Frontend Path:** B — React.js + Vite
+
+---
+
+## 1. JS Engine vs. Runtime
+
+### Two separate JavaScript environments
+
+SecureNote runs JavaScript in **two entirely different environments**, which is the core of this assignment's architecture.
+
+#### Frontend: Browser Runtime
+`frontend/src/**/*.jsx` files are bundled by Vite and executed inside the **browser**. The JavaScript *engine* is **V8** (Chrome/Edge) or **SpiderMonkey** (Firefox). The browser *runtime* wraps the engine and provides exclusive browser APIs:
+
+- `document`, `window` — DOM and browser-object model
+- `fetch()` — Fetch API for HTTP requests
+- `addEventListener` — event handling
+- `localStorage`, `sessionStorage` — client-side storage
+- `ReactDOM.createRoot()` — React mounts into the real DOM
+
+**None of these exist in Node.js.**
+
+#### Backend: Node.js Runtime
+`backend/server.js` runs on the **server machine** under the **Node.js runtime**. It also uses the V8 engine, but Node provides completely different APIs:
+
+- `process.env` — access to environment variables (OS-level)
+- `require()` / CommonJS modules
+- `fs`, `path`, `net` — file system, networking, OS modules
+- `http` / `express` — HTTP server creation
+- `Buffer` — binary data handling
+
+**There is no `document` in Node.js.** There is no `process.env` in the browser.
+
+> **Key insight:** V8 is the engine in both environments. The *runtime* wrapping it determines what APIs are available. `process.env.SECRET_TOKEN` works in `server.js` but would throw `ReferenceError: process is not defined` in any browser-executed file.
+
+---
+
+## 2. DOM — How the Frontend Updates the Screen (React / Virtual DOM)
+
+SecureNote uses **React.js** (Path B), which means the Virtual DOM manages real-DOM updates rather than manual manipulation.
+
+### What is the Virtual DOM?
+
+React maintains an **in-memory JavaScript object tree** (the Virtual DOM) that mirrors the real browser DOM. When state changes, React:
+
+1. Re-renders the affected component functions, producing a new Virtual DOM tree.
+2. **Diffs** the new tree against the previous one (reconciliation).
+3. Computes the **minimal set of real DOM changes** needed.
+4. Applies only those changes to the browser's real DOM (commit phase).
+
+This is more efficient than manually removing/appending every element.
+
+### How state changes drive UI updates in this project
+
+```jsx
+// In NotesPage.jsx
+const [notes, setNotes] = useState([])   // React state
+
+// When a new note is created:
+setNotes(prev => [newNote, ...prev])
+// React diffs → sees one new <NoteCard> at the top → inserts one real <article> element
+```
+
+```jsx
+// In App.jsx
+const [token, setToken] = useState(null)
+
+// When user logs in:
+onLogin(token)  →  setToken(token)
+// React diffs → LoginPage unmounts, NotesPage mounts — entire page swaps, no navigation
+```
+
+### useEffect for data fetching
+
+```jsx
+useEffect(() => { loadNotes() }, [])
+// Runs once after component mounts (equivalent to DOMContentLoaded in vanilla JS)
+// Fetches data → setNotes() → React re-renders the grid
+```
+
+**Component mapping** replaces a `for` loop of `createElement`:
+```jsx
+{notes.map((note, idx) => (
+  <NoteCard key={note.id} note={note} animDelay={idx * 50} />
+))}
+// React maps data → Virtual DOM nodes → efficiently inserts real DOM elements
+```
+
+---
+
+## 3. HTTP/HTTPS — The Request/Response Cycle
+
+### What happens when the user clicks "Save Note"
+
+1. `ComposePanel.jsx` calls `onSave(title, content)` which triggers in `NotesPage.jsx`:
+
+```js
+const res = await fetch('/api/notes', {
+  method: 'POST',
+  headers: {
+    'Content-Type':  'application/json',
+    'Authorization': token,        // SECRET_TOKEN in header, never in source
+  },
+  body: JSON.stringify({ title, content }),
+})
+```
+
+2. Vite's dev proxy forwards `/api/*` → `http://localhost:3001/api/*` (configured in `vite.config.js`). This avoids CORS issues during development.
+
+3. The browser constructs an **HTTP/1.1 POST request**:
+```
+POST /api/notes HTTP/1.1
+Host: localhost:3001
+Content-Type: application/json
+Authorization: SecureNote-S3cr3t-K3y-2025
+
+{"title":"My Note","content":"Hello world"}
+```
+
+4. Express parses the request. The `requireAuth` middleware reads the `Authorization` header and compares it to `process.env.SECRET_TOKEN`.
+
+5. If valid, Express sends a second HTTP request to **PocketHost** with the `POCKETHOST_TOKEN` in a `Bearer` Authorization header.
+
+6. PocketHost responds `201 Created` → Express responds `201 Created` → React calls `setNotes(prev => [newNote, ...prev])` → card appears instantly.
+
+### HTTP Verbs and Status Codes
+
+| Verb   | Endpoint           | Auth Required | Description          |
+|--------|--------------------|---------------|----------------------|
+| GET    | `/api/notes`       | No            | Read all notes       |
+| POST   | `/api/notes`       | Yes           | Create a new note    |
+| DELETE | `/api/notes/:id`   | Yes           | Delete a note by ID  |
+
+| Status | Meaning       | When returned                       |
+|--------|---------------|-------------------------------------|
+| 200    | OK            | Successful GET or DELETE            |
+| 201    | Created       | Successful POST                     |
+| 400    | Bad Request   | Missing title or content            |
+| 401    | Unauthorized  | Wrong or missing Authorization      |
+| 404    | Not Found     | DELETE with non-existent ID         |
+| 500    | Server Error  | Unexpected server exception         |
+
+### Why HTTPS is critical in production
+
+We use **HTTP locally** (unencrypted). In production, HTTPS adds **TLS (Transport Layer Security)**:
+
+- **Encryption:** All data — including the `Authorization` header containing `SECRET_TOKEN` — is encrypted between client and server. Without HTTPS, anyone on the same network can read the token in plain text using a packet sniffer.
+- **Integrity:** TLS message authentication codes (MACs) prevent tampering mid-transit.
+- **Authentication:** TLS certificates (signed by Certificate Authorities) verify the server's identity, preventing man-in-the-middle attacks.
+
+Even a "simple" internal tool like SecureNote needs HTTPS in production because leaking the token means anyone can create or delete notes impersonating an authorized user.
+
+---
+
+## 4. Environment Variables — Why SECRET_TOKEN Lives on the Backend
+
+### The golden rule: secrets never touch the client
+
+`SECRET_TOKEN` and `POCKETHOST_TOKEN` live exclusively in `backend/.env`:
+
+```dotenv
+SECRET_TOKEN=SecureNote-S3cr3t-K3y-2025
+POCKETHOST_TOKEN=20260301eink
+```
+
+Loaded into `process.env` by `dotenv` at **server startup**. They are never written into any file the browser downloads.
+
+### What would happen if we put SECRET_TOKEN in React code?
+
+```jsx
+// App.jsx — CATASTROPHICALLY WRONG
+const SECRET_TOKEN = 'SecureNote-S3cr3t-K3y-2025'
+```
+
+Vite **bundles all source files into JavaScript sent to every browser**. Any visitor can:
+1. Open DevTools → Network → view any JS bundle
+2. Search for the token string
+3. Make unlimited authenticated POST/DELETE requests, bypassing all access control
+
+**There is no such thing as a secret in frontend code.** The browser must download it to run it.
+
+### How environment variables keep secrets safe
+
+| Property                | Backend `.env`        | Frontend JSX source |
+|-------------------------|-----------------------|---------------------|
+| Visible to visitors?    | ❌ No                 | ✅ Yes (DevTools)   |
+| Committed to Git?       | ❌ No (.gitignore)    | ✅ Yes              |
+| Exists only in memory?  | ✅ Yes (process.env)  | ❌ N/A              |
+| Safe for secrets?       | ✅ Yes                | ❌ Never            |
+
+The `.gitignore` ensures `.env` never enters the repository. If a secret appears in Git history — even once, even deleted — it is compromised and must be rotated.
+
+---
+
+## Bonus Features
+
+### +15 pts: PocketHost Data Persistence
+
+Notes are stored in a hosted PocketBase instance via the backend proxy. Notes survive server restarts. The architecture:
+
+```
+Browser → POST /api/notes (Authorization: SECRET_TOKEN)
+       → Express validates → proxies to PocketHost (Bearer: POCKETHOST_TOKEN)
+       → PocketHost stores record → returns new note
+       → Express returns 201 → React updates state
+```
+
+The frontend never knows PocketHost exists. The `POCKETHOST_TOKEN` is only ever in `process.env`.
+
+### +5 pts: Loading State
+
+- **Skeleton cards** shimmer during initial `fetchNotes()` via `@keyframes shimmer`
+- **Inline spinner** on the Save button during POST requests
+- **Optimistic delete** with inline confirm dialog before the request fires
+- All loading states managed via React `useState` (`loading`, `deleting`)

@@ -1,0 +1,254 @@
+/* ── CSS Reset & Variables ─────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --cream:       #FAF8F3;
+  --cream-2:     #F2EDE4;
+  --cream-3:     #E8E0D3;
+  --brown:       #9B7653;
+  --brown-dark:  #7A5C3D;
+  --brown-light: #C4A882;
+  --brown-faint: #F0E9DF;
+  --charcoal:    #1C1917;
+  --charcoal-2:  #3D3530;
+  --charcoal-3:  #6B5E56;
+  --charcoal-4:  #9C8F87;
+  --red:         #B04040;
+  --red-light:   #FBF0F0;
+  --green:       #3D7A5C;
+  --green-light: #EDF6F1;
+  --white:       #FFFFFF;
+  --shadow-sm:   0 1px 3px rgba(28,25,23,0.08), 0 1px 2px rgba(28,25,23,0.04);
+  --shadow-md:   0 4px 16px rgba(28,25,23,0.10), 0 2px 4px rgba(28,25,23,0.06);
+  --shadow-lg:   0 16px 48px rgba(28,25,23,0.14), 0 4px 12px rgba(28,25,23,0.08);
+  --radius-sm:   6px;
+  --radius-md:   12px;
+  --radius-lg:   20px;
+  --font-serif:  'Playfair Display', Georgia, serif;
+  --font-sans:   'DM Sans', system-ui, sans-serif;
+  --ease:        cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html { font-size: 16px; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--cream);
+  color: var(--charcoal);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* ── Keyframe Animations ───────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.6); }
+}
+
+/* ============================================================
+   Responsive Layout Classes
+   ============================================================ */
+
+/* Login Page */
+.login-root {
+  display: flex;
+  min-height: 100vh;
+  font-family: var(--font-sans);
+}
+
+.login-left {
+  flex: 0 0 42%;
+  background: var(--charcoal);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  padding: 4rem 3rem;
+}
+
+.login-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 2rem;
+  background: var(--cream);
+  overflow-y: auto;
+}
+
+/* Notes Page Nav */
+.nav-root {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(250,248,243,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--cream-3);
+  box-shadow: var(--shadow-sm);
+}
+
+.nav-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.nav-label {
+  font-size: 0.78rem;
+  color: var(--charcoal-4);
+  background: var(--cream-2);
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  border: 1px solid var(--cream-3);
+  white-space: nowrap;
+}
+
+.nav-logout-label {
+  display: inline;
+}
+
+/* Notes grid */
+.notes-main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+}
+
+.notes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.75rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Compose Panel */
+.compose-form {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.compose-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.5rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.compose-btn-row {
+  display: flex;
+  gap: 0.6rem;
+}
+
+/* NoteCard confirm row */
+.confirm-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  animation: slideDown 0.15s ease;
+}
+
+/* ── Tablet (≤ 768px) ── */
+@media (max-width: 768px) {
+  .login-left {
+    display: none;
+  }
+
+  .login-right {
+    padding: 2rem 1.5rem;
+    align-items: flex-start;
+    padding-top: 3rem;
+  }
+
+  .nav-label {
+    display: none;
+  }
+
+  .nav-logout-label {
+    display: none;
+  }
+
+  .notes-main {
+    padding: 1.5rem 1rem 3rem;
+  }
+
+  .notes-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-header {
+    align-items: center;
+  }
+}
+
+/* ── Mobile (≤ 480px) ── */
+@media (max-width: 480px) {
+  .login-right {
+    padding: 1.5rem 1rem;
+    padding-top: 2.5rem;
+  }
+
+  .nav-inner {
+    padding: 0 1rem;
+    height: 54px;
+  }
+
+  .notes-main {
+    padding: 1rem 0.75rem 3rem;
+  }
+
+  .compose-form {
+    padding: 1rem;
+  }
+
+  .compose-footer {
+    flex-direction: column;
+    align-items: flex-end;
+  }
+}
