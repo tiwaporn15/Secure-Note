@@ -1,17 +1,25 @@
 /**
  * API configuration
  * 
- * When using `npm run dev` (Vite), requests to /api are proxied to localhost:3001.
- * When opening index.html directly OR if the proxy isn't working,
- * we fall back to the direct backend URL.
- *
- * Change BACKEND_PORT below if your backend runs on a different port.
+ * Supports multiple environments:
+ * - Local dev: npm run dev (Vite), uses /api proxy
+ * - Production: Uses environment variable VITE_API_URL or fallback to relative /api
  */
-const BACKEND_PORT = 3001
 
-// Detect if we're running through Vite dev server or directly
-const isDev = window.location.port === '5173' || window.location.port === '3000'
+// Get backend URL from environment or use intelligent defaults
+const getAPIBase = () => {
+  // Import.meta.env.VITE_API_URL comes from Vercel env vars
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL
+  }
 
-export const API_BASE = isDev
-  ? '/api'                                    // Vite proxy handles it
-  : `http://localhost:${BACKEND_PORT}/api`    // Direct connection fallback
+  // Dev mode: use /api proxy or localhost
+  if (import.meta.env.DEV) {
+    return '/api'
+  }
+
+  // Production fallback: assume API is on same domain
+  return '/api'
+}
+
+export const API_BASE = getAPIBase()
