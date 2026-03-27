@@ -3,7 +3,7 @@
  * 
  * Supports multiple environments:
  * - Local dev: npm run dev (Vite), uses /api proxy
- * - Production: Uses environment variable VITE_API_URL or fallback to relative /api
+ * - Production: Uses environment variable or hardcoded backend URL
  */
 
 // Get backend URL from environment or use intelligent defaults
@@ -13,13 +13,13 @@ const getAPIBase = () => {
     return import.meta.env.VITE_API_URL
   }
 
-  // Dev mode: use /api proxy or localhost
+  // Dev mode: use /api proxy
   if (import.meta.env.DEV) {
     return '/api'
   }
 
-  // Production fallback: assume API is on same domain
-  return '/api'
+  // Production fallback: use render backend directly
+  return 'https://secure-note-0zqt.onrender.com/api'
 }
 
 export const API_BASE = getAPIBase()
