@@ -4,6 +4,7 @@
  */
 import { useState } from 'react'
 import { API_BASE } from '../config'
+import loginIllustration from '../assets/login-illustration.svg'
 
 const QUOTES = [
   { text: 'Your thoughts, kept safe.', attr: 'SecureNote' },
@@ -11,32 +12,44 @@ const QUOTES = [
   { text: 'Private by design.', attr: 'SecureNote' },
 ]
 
-export default function LoginPage({ onLogin }) {
-  const [token, setToken]     = useState('')
-  const [show, setShow]       = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState('')
-  const [quoteIdx]            = useState(() => Math.floor(Math.random() * QUOTES.length))
+export default function LoginPage({ onLogin, onNavigate }) {
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [show, setShow]         = useState(false)
+  const [loading, setLoading]   = useState(false)
+  const [error, setError]       = useState('')
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [quoteIdx]              = useState(() => Math.floor(Math.random() * QUOTES.length))
   const quote = QUOTES[quoteIdx]
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!token.trim()) return setError('Please enter your access token.')
+    if (!username.trim() || !password.trim()) {
+      return setError('Please enter both username and password.')
+    }
     setError('')
     setLoading(true)
     try {
-      const res = await fetch(`${API_BASE}/notes`, {
+      const res = await fetch(`${API_BASE}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',  // Allow cookies to be set/sent
+        body: JSON.stringify({ username: username.trim(), password: password.trim() }),
         signal: AbortSignal.timeout(5000),
       })
-      if (!res.ok) throw new Error(`Server responded with ${res.status}`)
-      onLogin(token.trim())
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.message || `Login failed: ${res.status}`)
+      }
+      const data = await res.json()
+      onLogin(username.trim(), data.role)
     } catch (err) {
       if (err.name === 'TimeoutError' || err.name === 'AbortError') {
         setError('Server is not responding. Is the backend running on port 3001?')
       } else if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError') || err.message.includes('net::')) {
         setError('Cannot reach the backend. Run: cd backend && npm start')
       } else {
-        setError(`Connection error: ${err.message}`)
+        setError(err.message)
       }
     } finally {
       setLoading(false)
@@ -44,61 +57,90 @@ export default function LoginPage({ onLogin }) {
   }
 
   return (
-    <div className="login-root">
+    <div className="login-root" style={{ backgroundImage: `url(${loginIllustration})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
 
-      {/* ── Left decorative panel (hidden on mobile via CSS) ── */}
-      <div className="login-left">
-        <div style={s.leftContent}>
-          <div style={s.leftLogo}>
-            <StarIcon />
-            <span style={s.leftLogoText}>SecureNote</span>
+      {/* ── Navbar ── */}
+      <nav style={s.navbar}>
+        <div style={s.navContent}>
+          {/* Logo */}
+          <div style={s.navLogo}>
+            <HeartIcon color="#1C1A19" />
+            <span style={s.navLogoText}>SecureNote</span>
           </div>
-          <div style={s.dividerLines}>
-            {[100, 80, 60, 40, 25].map((w, i) => (
-              <div key={i} style={{ ...s.dividerLine, width: `${w}%`, opacity: 0.5 - i * 0.08 }} />
-            ))}
+
+          {/* Nav Links (Desktop) */}
+          <div className="nav-links-desktop" style={s.navLinksDesktop}>
+            <button onClick={() => onNavigate('home')} style={s.navLink}>Home</button>
+            <button onClick={() => onNavigate('about')} style={s.navLink}>About</button>
+            <button onClick={() => onNavigate('contact')} style={s.navLink}>Contact</button>
+            <button style={s.navActionBtn}>Log In</button>
           </div>
-          <blockquote style={s.quote}>
-            <p style={s.quoteText}>"{quote.text}"</p>
-            <cite style={s.quoteAttr}>— {quote.attr}</cite>
-          </blockquote>
-          <div style={s.leftFooter}>
-            {[0,1,2].map(i => (
-              <span key={i} style={{ ...s.dot, animationDelay: `${i * 0.4}s` }} />
-            ))}
-          </div>
+
+          {/* Hamburger Menu (Mobile) */}
+          <button 
+            className="nav-hamburger"
+            onClick={() => setMenuOpen(!menuOpen)} 
+            style={s.hamburger}
+            aria-label="Toggle menu"
+          >
+            <HamburgerIcon />
+          </button>
         </div>
-        {/* Decorative circles */}
-        <div style={{ ...s.circle, width: 320, height: 320, bottom: -100, right: -80 }} />
-        <div style={{ ...s.circle, width: 160, height: 160, top: 60, right: 40 }} />
-      </div>
 
-      {/* ── Right form panel ── */}
-      <div className="login-right">
+        {/* Mobile Menu */}
+        {menuOpen && (
+          <div className="nav-mobile-menu" style={s.mobileMenu}>
+            <button onClick={() => { onNavigate('home'); setMenuOpen(false); }} style={s.mobileLink}>Home</button>
+            <button onClick={() => { onNavigate('about'); setMenuOpen(false); }} style={s.mobileLink}>About</button>
+            <button onClick={() => { onNavigate('contact'); setMenuOpen(false); }} style={s.mobileLink}>Contact</button>
+            <button style={s.mobileActionBtn}>Log In</button>
+          </div>
+        )}
+      </nav>
+
+      {/* ── Form panel (centered) ── */}
+      <div className="login-right" style={{ ...s.loginContainer }}>
         <div style={s.card}>
 
           {/* Logo shown only on mobile (left panel is hidden) */}
           <div style={s.mobileLogoWrap}>
-            <StarIcon color="var(--brown)" />
+            <HeartIcon color="var(--brown)" />
             <span style={s.mobileLogoText}>SecureNote</span>
           </div>
 
           <div style={s.cardHeader}>
-            <h1 style={s.cardTitle}>Welcome back</h1>
-            <p style={s.cardSub}>Enter your access token to sign in</p>
+            <h1 style={s.cardTitle}>How was your day?</h1>
+            <p style={s.cardSub}>Log in to pour your heart out. Your thoughts are always safe with us.</p>
           </div>
 
           <form onSubmit={handleSubmit} style={s.form}>
             <div style={s.fieldGroup}>
-              <label style={s.label} htmlFor="tok">Access Token</label>
+              <label style={s.label} htmlFor="uname">Username</label>
+              <div style={s.inputRow}>
+                <span style={s.inputPre}><UserIcon /></span>
+                <input
+                  id="uname"
+                  type="text"
+                  value={username}
+                  onChange={e => { setUsername(e.target.value); setError('') }}
+                  placeholder="Enter username"
+                  style={{ ...s.input, ...(error ? s.inputErr : {}) }}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+              </div>
+            </div>
+
+            <div style={s.fieldGroup}>
+              <label style={s.label} htmlFor="pwd">Password</label>
               <div style={s.inputRow}>
                 <span style={s.inputPre}><LockIcon /></span>
                 <input
-                  id="tok"
+                  id="pwd"
                   type={show ? 'text' : 'password'}
-                  value={token}
-                  onChange={e => { setToken(e.target.value); setError('') }}
-                  placeholder="Paste your token here…"
+                  value={password}
+                  onChange={e => { setPassword(e.target.value); setError('') }}
+                  placeholder="Enter password"
                   style={{ ...s.input, ...(error ? s.inputErr : {}) }}
                   autoComplete="off"
                   spellCheck={false}
@@ -116,18 +158,18 @@ export default function LoginPage({ onLogin }) {
 
             <button
               type="submit"
-              disabled={loading || !token}
-              style={{ ...s.submitBtn, opacity: (!token || loading) ? 0.55 : 1, cursor: (!token || loading) ? 'not-allowed' : 'pointer' }}
+              disabled={loading || !username || !password}
+              style={{ ...s.submitBtn, opacity: (!username || !password || loading) ? 0.55 : 1, cursor: (!username || !password || loading) ? 'not-allowed' : 'pointer' }}
             >
               {loading
-                ? <><Spinner /> <span>Verifying…</span></>
-                : <><span>Sign in</span> <span style={s.arrow}>→</span></>
+                ? <><Spinner /> <span>Logging in…</span></>
+                : <><span>Log in</span> </>
               }
             </button>
           </form>
 
           <p style={s.hintText}>
-            Token = <code style={s.code}>SECRET_TOKEN</code> from <code style={s.code}>backend/.env</code>
+            Demo: <code style={s.code}>user123</code> / <code style={s.code}>password123</code> (user) or <code style={s.code}>admin</code> / <code style={s.code}>admin123</code> (admin)
           </p>
         </div>
       </div>
@@ -136,9 +178,14 @@ export default function LoginPage({ onLogin }) {
 }
 
 /* ── Icons ── */
-const StarIcon = ({ color = 'var(--brown-light)' }) => (
+const HeartIcon = ({ color = 'var(--brown-light)' }) => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill={color} stroke="none">
-    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
+    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+  </svg>
+)
+const UserIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
   </svg>
 )
 const LockIcon = () => (
@@ -164,9 +211,28 @@ const InfoIcon = () => (
 const Spinner = () => (
   <span style={{ width:14, height:14, border:'2px solid rgba(250,248,243,0.35)', borderTopColor:'var(--cream)', borderRadius:'50%', animation:'spin 0.6s linear infinite', display:'inline-block', flexShrink:0 }} />
 )
+const HamburgerIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <line x1="3" y1="6" x2="21" y2="6"/>
+    <line x1="3" y1="12" x2="21" y2="12"/>
+    <line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+)
 
 /* ── Styles (non-responsive only — responsive via CSS classes) ── */
 const s = {
+  navbar: { position:'fixed', top:0, left:0, right:0, background:'rgba(255,255,255,0.95)', backdropFilter:'blur(10px)', borderBottom:'1px solid rgba(0,0,0,0.05)', zIndex:100 },
+  navContent: { maxWidth:'1200px', margin:'0 auto', padding:'0 1.5rem', display:'flex', alignItems:'center', justifyContent:'space-between', height:'64px' },
+  navLogo: { display:'flex', alignItems:'center', gap:'0.5rem', cursor:'pointer' },
+  navLogoText: { fontFamily:'var(--font-serif)', fontSize:'1.2rem', fontWeight:600, color:'#1C1A19', letterSpacing:'0.02em' },
+  navLinksDesktop: { display:'flex', alignItems:'center', gap:'2rem' },
+  navLink: { fontSize:'0.95rem', color:'#423D38', textDecoration:'none', fontWeight:500, transition:'color 0.2s', cursor:'pointer', background:'none', border:'none', fontFamily:'inherit' },
+  navActionBtn: { background:'#F6C697', color:'white', border:'none', padding:'0.6rem 1.5rem', borderRadius:'8px', fontSize:'0.9rem', fontWeight:600, cursor:'pointer', transition:'background 0.2s' },
+  hamburger: { display:'flex', alignItems:'center', justifyContent:'center', background:'none', border:'none', cursor:'pointer', color:'#1C1A19' },
+  mobileMenu: { display:'flex', flexDirection:'column', gap:'1rem', padding:'1rem 1.5rem', borderTop:'1px solid rgba(0,0,0,0.05)', background:'rgba(255,255,255,0.98)' },
+  mobileLink: { fontSize:'0.95rem', color:'#423D38', textDecoration:'none', fontWeight:500, cursor:'pointer', background:'none', border:'none', fontFamily:'inherit' },
+  mobileActionBtn: { background:'#F6C697', color:'white', border:'none', padding:'0.6rem 1.5rem', borderRadius:'8px', fontSize:'0.9rem', fontWeight:600, cursor:'pointer', width:'100%' },
+
   leftContent: { position:'relative', zIndex:1, display:'flex', flexDirection:'column', gap:'2.5rem', width:'100%' },
   leftLogo: { display:'flex', alignItems:'center', gap:'0.6rem' },
   leftLogoText: { fontFamily:'var(--font-serif)', fontSize:'1.3rem', fontWeight:500, color:'var(--cream)', letterSpacing:'0.03em' },
@@ -183,7 +249,7 @@ const s = {
   mobileLogoWrap: { display:'flex', alignItems:'center', gap:'0.5rem', marginBottom:'0.5rem' },
   mobileLogoText: { fontFamily:'var(--font-serif)', fontSize:'1.2rem', fontWeight:500, color:'var(--charcoal)' },
 
-  card: { width:'100%', maxWidth:'380px', display:'flex', flexDirection:'column', gap:'2rem', animation:'fadeUp 0.5s var(--ease) both' },
+  card: { width:'100%', maxWidth:'380px', display:'flex', flexDirection:'column', gap:'2rem', animation:'fadeUp 0.5s var(--ease) both', background:'white', padding:'2rem', borderRadius:'12px', boxShadow:'0 10px 40px rgba(0,0,0,0.1)', marginTop:'80px' },
   cardHeader: { display:'flex', flexDirection:'column', gap:'0.35rem' },
   cardTitle: { fontFamily:'var(--font-serif)', fontSize:'clamp(1.6rem,5vw,2.1rem)', fontWeight:500, color:'var(--charcoal)', lineHeight:1.15 },
   cardSub: { fontSize:'0.9rem', color:'var(--charcoal-3)', fontWeight:300 },
@@ -196,7 +262,8 @@ const s = {
   inputErr: { borderColor:'var(--red)', boxShadow:'0 0 0 3px rgba(176,64,64,0.1)' },
   eyeBtn: { position:'absolute', right:'0.85rem', background:'none', border:'none', cursor:'pointer', color:'var(--charcoal-4)', display:'flex', padding:'0.2rem', borderRadius:'4px' },
   errMsg: { display:'flex', alignItems:'center', gap:'0.4rem', fontSize:'0.78rem', color:'var(--red)', animation:'slideDown 0.2s ease' },
-  submitBtn: { display:'flex', alignItems:'center', justifyContent:'center', gap:'0.5rem', background:'var(--charcoal)', color:'var(--cream)', border:'none', borderRadius:'var(--radius-sm)', padding:'0.875rem 1.5rem', fontSize:'0.9rem', fontWeight:500, fontFamily:'var(--font-sans)', transition:'background 0.2s, box-shadow 0.2s', boxShadow:'var(--shadow-sm)', width:'100%' },
+  submitBtn: { display:'flex', alignItems:'center', justifyContent:'center', gap:'0.5rem', background:'#F6C697', color:'white', border:'none', borderRadius:'var(--radius-sm)', padding:'0.875rem 1.5rem', fontSize:'0.9rem', fontWeight:500, fontFamily:'var(--font-sans)', transition:'background 0.2s, box-shadow 0.2s', boxShadow:'var(--shadow-sm)', width:'100%' },
+  loginContainer: { display:'flex', alignItems:'center', justifyContent:'center', width:'100%', minHeight:'100vh', position:'fixed', inset:0, zIndex:10 },
   arrow: { fontSize:'1.1rem' },
   hintText: { fontSize:'0.75rem', color:'var(--charcoal-4)', lineHeight:1.6 },
   code: { fontFamily:'monospace', background:'var(--cream-2)', padding:'0.1em 0.4em', borderRadius:'3px', fontSize:'0.85em', color:'var(--brown-dark)' },

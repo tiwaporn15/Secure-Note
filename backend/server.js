@@ -21,33 +21,59 @@ const app = express();
 
 // ─── Config from environment variables ─────────────────────────────────────
 const PORT             = process.env.PORT || 3001;
-const SECRET_TOKEN     = process.env.SECRET_TOKEN;
 const POCKETHOST_TOKEN = process.env.POCKETHOST_TOKEN;
 const POCKETHOST_BASE  =
   'https://app-tracking.pockethost.io/api/collections/notes/records';
 
-if (!SECRET_TOKEN) {
-  console.error('FATAL: SECRET_TOKEN is not set in .env');
-  process.exit(1);
-}
+// ─── Simple in-memory user store (for demo purposes) ─────────────────────────
+const users = new Map([
+  ['user123', { password: 'password123', role: 'user' }],
+  ['admin', { password: 'admin123', role: 'admin' }],
+]);
+const sessions = new Map();  // {sessionId}: {username, role, loginTime}
 
 // ─── Middleware ─────────────────────────────────────────────────────────────
-app.use(cors());            // Allow cross-origin requests from the frontend
+app.use(cors({
+  origin: 'http://localhost:5173',  // Vite dev server
+  credentials: true,                 // Allow cookies in cross-origin requests
+}));
 app.use(express.json());    // Parse incoming JSON request bodies
 
 // ─── Auth Middleware ────────────────────────────────────────────────────────
 /**
- * requireAuth — checks that the caller supplies the correct SECRET_TOKEN in
- * the Authorization header. Mutating/deleting operations require this.
+ * Helper: Parse cookies more robustly
  */
-const requireAuth = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  if (!authHeader || authHeader !== SECRET_TOKEN) {
+function parseCookies(cookieHeader) {
+  const cookies = {};
+  if (!cookieHeader) return cookies;
+  
+  cookieHeader.split(';').forEach(cookie => {
+    const [name, ...rest] = cookie.split('=');
+    const value = rest.join('='); // Rejoin in case there's an = in the value
+    cookies[name.trim()] = value.trim();
+  });
+  
+  return cookies;
+}
+
+/**
+ * requireSession — checks that the user has an active session cookie.
+ * Attaches session info to req.session for use in routes.
+ */
+const requireSession = (req, res, next) => {
+  const cookies = parseCookies(req.headers.cookie);
+  const sessionId = cookies.sessionId;
+  
+  if (!sessionId || !sessions.has(sessionId)) {
+    console.warn(`[Auth] Invalid/missing sessionId. Got:`, sessionId, `| Available sessions:`, [...sessions.keys()]);
     return res.status(401).json({
       error: 'Unauthorized',
-      message: 'A valid Authorization token is required for this action.',
+      message: 'Please log in first.',
     });
   }
+  
+  req.session = sessions.get(sessionId);
+  console.log(`[Auth] Valid session for user:`, req.session.username);
   next();
 };
 
@@ -60,34 +86,119 @@ const phHeaders = {
 // ─── Routes ─────────────────────────────────────────────────────────────────
 
 /**
- * GET /api/notes
- * Returns all notes from PocketHost as JSON.
- * Public endpoint — no auth needed to read notes.
+ * POST /api/login
+ * Authenticates user with username/password.
+ * Body: { username: string, password: string }
+ * Sets session cookie on success.
  */
-app.get('/api/notes', async (req, res) => {
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({
+      error: 'Bad Request',
+      message: 'Both username and password are required.',
+    });
+  }
+
+  // Check credentials
+  if (users.has(username) && users.get(username).password === password) {
+    // Create session with role
+    const user = users.get(username);
+    const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    sessions.set(sessionId, { username, role: user.role, loginTime: new Date() });
+    
+    console.log(`[Login] New session created - Username: ${username}, SessionId: ${sessionId}, Role: ${user.role}`);
+
+    // Set session cookie with CORS-friendly flags
+    res.setHeader('Set-Cookie', `sessionId=${sessionId}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400`);
+    return res.status(200).json({ message: 'Login successful', username, role: user.role });
+  }
+
+  console.log(`[Login] Failed attempt for username: ${username}`);
+  return res.status(401).json({
+    error: 'Unauthorized',
+    message: 'Invalid username or password. Try user123:password123 or admin:admin123',
+  });
+});
+
+/**
+ * POST /api/logout
+ * Clears the session. Works even without active session.
+ */
+app.post('/api/logout', (req, res) => {
+  const cookies = parseCookies(req.headers.cookie);
+  const sessionId = cookies.sessionId;
+  console.log('[Logout] Attempt - sessionId:', sessionId, 'Sessions map:', [...sessions.keys()]);
+  if (sessionId && sessions.has(sessionId)) {
+    sessions.delete(sessionId);
+    console.log('[Logout] Session deleted for:', sessionId);
+  }
+  // Send Set-Cookie header to clear cookie on client
+  res.setHeader('Set-Cookie', 'sessionId=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
+  return res.status(200).json({ message: 'Logged out successfully' });
+});
+
+
+/**
+ * GET /api/notes
+ * Returns notes based on user role:
+ * - Admin: all notes
+ * - User: only their own notes
+ * Requires session.
+ */
+app.get('/api/notes', requireSession, async (req, res) => {
   try {
+    console.log(`[/api/notes] Fetching for user: ${req.session.username}, role: ${req.session.role}`);
     const response = await fetch(
       `${POCKETHOST_BASE}?sort=-created&perPage=100`,
       { headers: phHeaders }
     );
+    
+    if (!response.ok) {
+      console.error(`[/api/notes] PocketHost error: ${response.status} ${response.statusText}`);
+      const errText = await response.text();
+      console.error(`[/api/notes] Error details:`, errText);
+      return res.status(502).json({ error: 'Failed to fetch notes from database', details: errText });
+    }
+    
     const data = await response.json();
 
     // PocketBase returns { items: [...] } or { items: null } on empty
-    const notes = data.items ?? [];
+    let notes = data.items ?? [];
+    console.log(`[/api/notes] Total notes in database: ${notes.length}`);
+    
+    // Filter notes by role
+    if (req.session.role === 'user') {
+      // Regular users only see their own notes
+      // Handle both 'owner' field and missing owner (backward compatibility)
+      notes = notes.filter(note => {
+        // If note has owner, it must match current user
+        if (note.owner !== undefined && note.owner !== null) {
+          return note.owner === req.session.username
+        }
+        // If no owner field, user can't see it (security: unowned notes are hidden)
+        return false
+      });
+      console.log(`[/api/notes] Filtered to user's own notes: ${notes.length}`);
+    }
+    // Admin sees all notes
+    
     return res.status(200).json(notes);
   } catch (err) {
-    console.error('GET /api/notes error:', err.message);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    console.error('[/api/notes] error:', err.message);
+    return res.status(500).json({ error: 'Internal Server Error', message: err.message });
   }
 });
 
 /**
  * POST /api/notes
- * Creates a new note. Requires Authorization header.
+ * Creates a new note. Requires valid session.
  * Body: { title: string, content: string }
+ * note will have owner field set to current username.
  * Returns: 201 Created with the new note object.
  */
-app.post('/api/notes', requireAuth, async (req, res) => {
+app.post('/api/notes', requireSession, async (req, res) => {
   const { title, content } = req.body;
 
   if (!title || !content) {
@@ -101,7 +212,11 @@ app.post('/api/notes', requireAuth, async (req, res) => {
     const response = await fetch(POCKETHOST_BASE, {
       method:  'POST',
       headers: phHeaders,
-      body:    JSON.stringify({ title, content }),
+      body:    JSON.stringify({ 
+        title, 
+        content,
+        owner: req.session.username,  // Set owner to current user
+      }),
     });
 
     if (!response.ok) {
@@ -120,26 +235,48 @@ app.post('/api/notes', requireAuth, async (req, res) => {
 
 /**
  * DELETE /api/notes/:id
- * Deletes a note by ID. Requires Authorization header.
- * Returns: 200 OK on success, 404 if not found.
+ * Deletes a note by ID. Requires valid session.
+ * - Admin can delete any note
+ * - User can only delete their own notes
+ * Returns: 200 OK on success, 404 if not found, 403 if forbidden.
  */
-app.delete('/api/notes/:id', requireAuth, async (req, res) => {
+app.delete('/api/notes/:id', requireSession, async (req, res) => {
   const { id } = req.params;
 
   try {
-    const response = await fetch(`${POCKETHOST_BASE}/${id}`, {
-      method:  'DELETE',
+    // First, fetch the note to check ownership
+    const getResponse = await fetch(`${POCKETHOST_BASE}/${id}`, {
       headers: phHeaders,
     });
 
-    if (response.status === 404) {
+    if (getResponse.status === 404) {
       return res.status(404).json({
         error: 'Not Found',
         message: `Note with id "${id}" does not exist.`,
       });
     }
 
-    if (!response.ok) {
+    if (!getResponse.ok) {
+      return res.status(502).json({ error: 'Failed to fetch note from database' });
+    }
+
+    const note = await getResponse.json();
+
+    // Check permissions
+    if (req.session.role === 'user' && note.owner !== req.session.username) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'You can only delete your own notes.',
+      });
+    }
+
+    // Delete the note
+    const deleteResponse = await fetch(`${POCKETHOST_BASE}/${id}`, {
+      method:  'DELETE',
+      headers: phHeaders,
+    });
+
+    if (!deleteResponse.ok) {
       return res.status(502).json({ error: 'Failed to delete note from database' });
     }
 
@@ -158,7 +295,12 @@ app.use((req, res) => {
 // ─── Start server ───────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`\n🔐 SecureNote API running → http://localhost:${PORT}`);
-  console.log(`   GET    http://localhost:${PORT}/api/notes`);
-  console.log(`   POST   http://localhost:${PORT}/api/notes  (Auth required)`);
-  console.log(`   DELETE http://localhost:${PORT}/api/notes/:id  (Auth required)\n`);
+  console.log(`   POST   http://localhost:${PORT}/api/login  (username/password)`);
+  console.log(`   POST   http://localhost:${PORT}/api/logout`);
+  console.log(`   GET    http://localhost:${PORT}/api/notes  (Login required)`);
+  console.log(`   POST   http://localhost:${PORT}/api/notes  (Login required)`);
+  console.log(`   DELETE http://localhost:${PORT}/api/notes/:id  (Login required)\n`);
+  console.log(`📝 Demo credentials:`);
+  console.log(`   Regular User:  user123 / password123 (sees only their notes)`);
+  console.log(`   Admin:         admin / admin123 (sees all notes)\n`);
 });
