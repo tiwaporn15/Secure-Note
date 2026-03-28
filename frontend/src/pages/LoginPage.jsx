@@ -207,8 +207,15 @@ export default function LoginPage({ onLogin, onNavigate }) {
 
           <p style={s.hintText}>
             {isSignUp 
-              ? 'Already have an account? Click the "Log In" tab above.'
-              : 'New here? Click the "Sign Up" tab to create an account.'}
+              ? 'Already have an account? '
+              : 'New here? '}
+            <button 
+              type="button"
+              onClick={() => { setIsSignUp(!isSignUp); setError('') }}
+              style={s.switchTabBtn}
+            >
+              {isSignUp ? 'Log In' : 'Sign Up'}
+            </button>
           </p>
         </div>
       </div>
@@ -310,5 +317,6 @@ const s = {
   loginContainer: { display:'flex', alignItems:'center', justifyContent:'center', width:'100%', minHeight:'100vh', position:'fixed', inset:0, zIndex:10 },
   arrow: { fontSize:'1.1rem' },
   hintText: { fontSize:'0.75rem', color:'var(--charcoal-4)', lineHeight:1.6 },
+  switchTabBtn: { background:'none', border:'none', color:'var(--brown)', fontWeight:600, fontSize:'0.75rem', cursor:'pointer', textDecoration:'underline', padding:0 },
   code: { fontFamily:'monospace', background:'var(--cream-2)', padding:'0.1em 0.4em', borderRadius:'3px', fontSize:'0.85em', color:'var(--brown-dark)' },
 }
