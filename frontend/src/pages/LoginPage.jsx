@@ -15,6 +15,7 @@ const QUOTES = [
 export default function LoginPage({ onLogin, onNavigate }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [show, setShow]         = useState(false)
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState('')
@@ -25,9 +26,20 @@ export default function LoginPage({ onLogin, onNavigate }) {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    
     if (!username.trim() || !password.trim()) {
       return setError('Please enter both username and password.')
     }
+
+    if (isSignUp) {
+      if (!confirmPassword.trim()) {
+        return setError('Please confirm your password.')
+      }
+      if (password !== confirmPassword) {
+        return setError('Passwords do not match.')
+      }
+    }
+
     setError('')
     setLoading(true)
     
@@ -54,6 +66,7 @@ export default function LoginPage({ onLogin, onNavigate }) {
         setError('')
         setUsername('')
         setPassword('')
+        setConfirmPassword('')
         setIsSignUp(false)
         alert('✅ Account created! Please log in now.')
       } else {
@@ -134,22 +147,6 @@ export default function LoginPage({ onLogin, onNavigate }) {
             </p>
           </div>
 
-          {/* Login/Sign Up Tabs */}
-          <div style={s.tabs}>
-            <button
-              onClick={() => { setIsSignUp(false); setError('') }}
-              style={{ ...s.tabBtn, ...(isSignUp ? {} : s.tabBtnActive) }}
-            >
-              Log In
-            </button>
-            <button
-              onClick={() => { setIsSignUp(true); setError('') }}
-              style={{ ...s.tabBtn, ...(isSignUp ? s.tabBtnActive : {}) }}
-            >
-              Sign Up
-            </button>
-          </div>
-
           <form onSubmit={handleSubmit} style={s.form}>
             <div style={s.fieldGroup}>
               <label style={s.label} htmlFor="uname">Username</label>
@@ -186,17 +183,40 @@ export default function LoginPage({ onLogin, onNavigate }) {
                   {show ? <EyeOffIcon /> : <EyeIcon />}
                 </button>
               </div>
-              {error && (
-                <div style={s.errMsg}>
-                  <InfoIcon /> {error}
-                </div>
-              )}
             </div>
+
+            {isSignUp && (
+              <div style={s.fieldGroup}>
+                <label style={s.label} htmlFor="confirm">Confirm Password</label>
+                <div style={s.inputRow}>
+                  <span style={s.inputPre}><LockIcon /></span>
+                  <input
+                    id="confirm"
+                    type={show ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={e => { setConfirmPassword(e.target.value); setError('') }}
+                    placeholder="Confirm password"
+                    style={{ ...s.input, ...(error ? s.inputErr : {}) }}
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                  <button type="button" onClick={() => setShow(p => !p)} style={s.eyeBtn} aria-label="Toggle visibility">
+                    {show ? <EyeOffIcon /> : <EyeIcon />}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {error && (
+              <div style={s.errMsg}>
+                <InfoIcon /> {error}
+              </div>
+            )}
 
             <button
               type="submit"
-              disabled={loading || !username || !password}
-              style={{ ...s.submitBtn, opacity: (!username || !password || loading) ? 0.55 : 1, cursor: (!username || !password || loading) ? 'not-allowed' : 'pointer' }}
+              disabled={loading || !username || !password || (isSignUp && !confirmPassword)}
+              style={{ ...s.submitBtn, opacity: (!username || !password || (isSignUp && !confirmPassword) || loading) ? 0.55 : 1, cursor: (!username || !password || (isSignUp && !confirmPassword) || loading) ? 'not-allowed' : 'pointer' }}
             >
               {loading
                 ? <><Spinner /> <span>{isSignUp ? 'Creating account…' : 'Logging in…'}</span></>
@@ -205,18 +225,29 @@ export default function LoginPage({ onLogin, onNavigate }) {
             </button>
           </form>
 
-          <p style={s.hintText}>
-            {isSignUp 
-              ? 'Already have an account? '
-              : 'New here? '}
-            <button 
-              type="button"
-              onClick={() => { setIsSignUp(!isSignUp); setError('') }}
-              style={s.switchTabBtn}
-            >
-              {isSignUp ? 'Log In' : 'Sign Up'}
-            </button>
-          </p>
+          {!isSignUp && (
+            <p style={s.hintText}>
+              Don't have an account? <button 
+                type="button"
+                onClick={() => { setIsSignUp(true); setError('') }}
+                style={s.switchTabBtn}
+              >
+                Sign up
+              </button>
+            </p>
+          )}
+
+          {isSignUp && (
+            <p style={s.hintText}>
+              Already have an account? <button 
+                type="button"
+                onClick={() => { setIsSignUp(false); setError(''); setPassword(''); setConfirmPassword('') }}
+                style={s.switchTabBtn}
+              >
+                Log in
+              </button>
+            </p>
+          )}
         </div>
       </div>
     </div>
@@ -299,10 +330,6 @@ const s = {
   cardHeader: { display:'flex', flexDirection:'column', gap:'0.35rem' },
   cardTitle: { fontFamily:'var(--font-serif)', fontSize:'clamp(1.6rem,5vw,2.1rem)', fontWeight:500, color:'var(--charcoal)', lineHeight:1.15 },
   cardSub: { fontSize:'0.9rem', color:'var(--charcoal-3)', fontWeight:300 },
-  
-  tabs: { display:'flex', gap:'0.5rem', borderBottom:'1px solid var(--cream-3)', padding:'0 0 0.75rem' },
-  tabBtn: { flex:1, background:'none', border:'none', padding:'0.5rem 0', fontSize:'0.9rem', fontWeight:500, color:'var(--charcoal-4)', cursor:'pointer', borderBottom:'2px solid transparent', transition:'all 0.2s' },
-  tabBtnActive: { color:'var(--brown)', borderBottomColor:'var(--brown)' },
   
   form: { display:'flex', flexDirection:'column', gap:'1.25rem' },
   fieldGroup: { display:'flex', flexDirection:'column', gap:'0.5rem' },
