@@ -3,7 +3,7 @@
  */
 
 const HeartIcon = ({ size = 20 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="#F6C697" stroke="none">
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="#D4A574" stroke="none">
     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
   </svg>
 )
@@ -170,15 +170,15 @@ export default function ContactPage({ onNavigate }) {
 const s = {
   root: {
     minHeight: '100vh',
-    background: '#FAF8F3',
+    background: '#FEFBF7',
     fontFamily: 'var(--font-sans)',
   },
   nav: {
     position: 'sticky', top: 0, zIndex: 50,
     background: 'rgba(255,255,255,0.93)',
     backdropFilter: 'blur(14px)',
-    borderBottom: '1px solid rgba(196,168,130,0.2)',
-    boxShadow: '0 1px 12px rgba(28,26,25,0.05)',
+    borderBottom: '1px solid rgba(170,140,100,0.2)',
+    boxShadow: '0 1px 12px rgba(45,37,31,0.04)',
   },
   navInner: {
     maxWidth: 1100, margin: '0 auto', padding: '0 1.5rem',
@@ -190,12 +190,12 @@ const s = {
   brandName: {
     fontFamily: 'var(--font-serif)',
     fontSize: '1.15rem', fontWeight: 600,
-    color: '#1C1A19', letterSpacing: '0.02em',
+    color: '#2D251F', letterSpacing: '0.02em',
   },
   navRight: { display: 'flex', alignItems: 'center', gap: '2rem' },
   navLink: { 
     background: 'none', border: 'none', 
-    fontSize: '0.95rem', color: '#9A9490',
+    fontSize: '0.95rem', color: '#9A8970',
     cursor: 'pointer', transition: 'color 0.2s', fontFamily: 'var(--font-sans)',
     fontWeight: 500,
   },
@@ -203,57 +203,57 @@ const s = {
   container: { maxWidth: 1000, margin: '0 auto' },
   card: {
     background: 'white',
-    border: '1px solid rgba(196,168,130,0.2)',
+    border: '1px solid rgba(170,140,100,0.2)',
     borderRadius: 16,
     padding: '2.5rem',
-    boxShadow: '0 4px 20px rgba(28,26,25,0.08)',
+    boxShadow: '0 4px 20px rgba(45,37,31,0.07)',
   },
   header: {
     textAlign: 'center',
     marginBottom: '2.5rem',
     paddingBottom: '2rem',
-    borderBottom: '1px solid #F2EDE4',
+    borderBottom: '1px solid #F5EFE8',
   },
   title: {
     fontFamily: 'var(--font-serif)',
     fontSize: '2.2rem', fontWeight: 700,
-    color: '#1C1A19', marginBottom: '0.5rem',
+    color: '#2D251F', marginBottom: '0.5rem',
   },
-  subtitle: { fontSize: '1rem', color: '#9A9490', lineHeight: 1.6 },
+  subtitle: { fontSize: '1rem', color: '#9A8970', lineHeight: 1.6 },
   contactGrid: {
     display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
     gap: '1.5rem', marginBottom: '2.5rem',
   },
   contactCard: {
-    background: '#FAF8F3',
+    background: '#FEFBF7',
     padding: '1.5rem',
     borderRadius: 12,
-    border: '1px solid #E8E0D3',
+    border: '1px solid #EDE5DB',
     textAlign: 'center',
   },
   contactIcon: { 
     display: 'flex', justifyContent: 'center', alignItems: 'center',
     marginBottom: '0.5rem', 
-    color: '#F6C697',
+    color: '#D4A574',
   },
   contactTitle: {
     fontFamily: 'var(--font-serif)',
     fontSize: '1.1rem', fontWeight: 600,
-    color: '#1C1A19', marginBottom: '0.25rem',
+    color: '#2D251F', marginBottom: '0.25rem',
   },
-  contactSub: { fontSize: '0.8rem', color: '#9A9490', marginBottom: '0.75rem' },
+  contactSub: { fontSize: '0.8rem', color: '#9A8970', marginBottom: '0.75rem' },
   contactLink: {
     display: 'inline-block',
-    color: '#F6C697', textDecoration: 'none',
+    color: '#D4A574', textDecoration: 'none',
     fontWeight: 600, fontSize: '0.95rem',
     transition: 'color 0.2s',
   },
-  contactValue: { fontSize: '0.9rem', color: '#1C1A19', fontWeight: 500 },
+  contactValue: { fontSize: '0.9rem', color: '#2D251F', fontWeight: 500 },
   section: { marginBottom: '2.5rem' },
   sectionTitle: {
     fontFamily: 'var(--font-serif)',
     fontSize: '1.4rem', fontWeight: 600,
-    color: '#1C1A19', marginBottom: '1.25rem',
+    color: '#2D251F', marginBottom: '1.25rem',
     textAlign: 'center',
   },
   socialLinks: {
@@ -262,13 +262,13 @@ const s = {
   socialBtn: {
     width: '50px', height: '50px',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    background: '#F6C697', color: 'white',
+    background: '#D4A574', color: 'white',
     borderRadius: '50%', textDecoration: 'none',
     fontSize: '1.2rem', transition: 'transform 0.2s, background 0.2s',
     fontWeight: 600,
   },
   messageSection: { 
-    borderTop: '1px solid #F2EDE4', 
+    borderTop: '1px solid #F5EFE8', 
     paddingTop: '2rem',
   },
   form: {
@@ -277,7 +277,7 @@ const s = {
   },
   input: {
     padding: '0.85rem 1rem',
-    border: '1.5px solid #E8E0D3',
+    border: '1.5px solid #EDE5DB',
     borderRadius: 8,
     fontSize: '0.95rem',
     fontFamily: 'var(--font-sans)',
@@ -286,7 +286,7 @@ const s = {
   },
   textarea: {
     padding: '0.85rem 1rem',
-    border: '1.5px solid #E8E0D3',
+    border: '1.5px solid #EDE5DB',
     borderRadius: 8,
     fontSize: '0.95rem',
     fontFamily: 'var(--font-sans)',
@@ -296,7 +296,7 @@ const s = {
   },
   submitBtn: {
     padding: '0.9rem 1.5rem',
-    background: '#F6C697', color: 'white',
+    background: '#D4A574', color: 'white',
     border: 'none', borderRadius: 8,
     fontSize: '0.95rem', fontWeight: 600,
     cursor: 'pointer',

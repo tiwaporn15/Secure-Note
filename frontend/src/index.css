@@ -5,25 +5,25 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --cream:       #FAF8F3;
-  --cream-2:     #F2EDE4;
-  --cream-3:     #E8E0D3;
-  --brown:       #9B7653;
-  --brown-dark:  #7A5C3D;
-  --brown-light: #C4A882;
-  --brown-faint: #F0E9DF;
-  --charcoal:    #1C1917;
-  --charcoal-2:  #3D3530;
-  --charcoal-3:  #6B5E56;
-  --charcoal-4:  #9C8F87;
+  --cream:       #FEFBF7;
+  --cream-2:     #F5EFE8;
+  --cream-3:     #EDE5DB;
+  --brown:       #A6845C;
+  --brown-dark:  #8B6F47;
+  --brown-light: #D4A574;
+  --brown-faint: #F8EFE2;
+  --charcoal:    #2D251F;
+  --charcoal-2:  #453A33;
+  --charcoal-3:  #6B6058;
+  --charcoal-4:  #8B7F77;
   --red:         #B04040;
   --red-light:   #FBF0F0;
   --green:       #3D7A5C;
   --green-light: #EDF6F1;
   --white:       #FFFFFF;
-  --shadow-sm:   0 1px 3px rgba(28,25,23,0.08), 0 1px 2px rgba(28,25,23,0.04);
-  --shadow-md:   0 4px 16px rgba(28,25,23,0.10), 0 2px 4px rgba(28,25,23,0.06);
-  --shadow-lg:   0 16px 48px rgba(28,25,23,0.14), 0 4px 12px rgba(28,25,23,0.08);
+  --shadow-sm:   0 1px 3px rgba(45,37,31,0.08), 0 1px 2px rgba(45,37,31,0.04);
+  --shadow-md:   0 4px 16px rgba(45,37,31,0.10), 0 2px 4px rgba(45,37,31,0.06);
+  --shadow-lg:   0 16px 48px rgba(45,37,31,0.14), 0 4px 12px rgba(45,37,31,0.08);
   --radius-sm:   6px;
   --radius-md:   12px;
   --radius-lg:   20px;

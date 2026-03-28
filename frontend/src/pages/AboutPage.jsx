@@ -3,7 +3,7 @@
  */
 
 const HeartIcon = ({ size = 20 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="#F6C697" stroke="none">
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="#D4A574" stroke="none">
     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
   </svg>
 )
@@ -118,15 +118,15 @@ export default function AboutPage({ onNavigate }) {
 const s = {
   root: {
     minHeight: '100vh',
-    background: '#FAF8F3',
+    background: '#FEFBF7',
     fontFamily: 'var(--font-sans)',
   },
   nav: {
     position: 'sticky', top: 0, zIndex: 50,
     background: 'rgba(255,255,255,0.93)',
     backdropFilter: 'blur(14px)',
-    borderBottom: '1px solid rgba(196,168,130,0.2)',
-    boxShadow: '0 1px 12px rgba(28,26,25,0.05)',
+    borderBottom: '1px solid rgba(170,140,100,0.2)',
+    boxShadow: '0 1px 12px rgba(45,37,31,0.04)',
   },
   navInner: {
     maxWidth: 1100, margin: '0 auto', padding: '0 1.5rem',
@@ -138,12 +138,12 @@ const s = {
   brandName: {
     fontFamily: 'var(--font-serif)',
     fontSize: '1.15rem', fontWeight: 600,
-    color: '#1C1A19', letterSpacing: '0.02em',
+    color: '#2D251F', letterSpacing: '0.02em',
   },
   navRight: { display: 'flex', alignItems: 'center', gap: '2rem' },
   navLink: { 
     background: 'none', border: 'none', 
-    fontSize: '0.95rem', color: '#9A9490',
+    fontSize: '0.95rem', color: '#9A8970',
     cursor: 'pointer', transition: 'color 0.2s', fontFamily: 'var(--font-sans)',
     fontWeight: 500,
   },
@@ -151,49 +151,49 @@ const s = {
   container: { maxWidth: 900, margin: '0 auto' },
   card: {
     background: 'white',
-    border: '1px solid rgba(196,168,130,0.2)',
+    border: '1px solid rgba(170,140,100,0.2)',
     borderRadius: 16,
     padding: '2.5rem',
-    boxShadow: '0 4px 20px rgba(28,26,25,0.08)',
+    boxShadow: '0 4px 20px rgba(45,37,31,0.07)',
   },
   header: {
     textAlign: 'center',
     marginBottom: '2.5rem',
     paddingBottom: '2rem',
-    borderBottom: '1px solid #F2EDE4',
+    borderBottom: '1px solid #F5EFE8',
   },
   avatar: { 
     display: 'flex', justifyContent: 'center', alignItems: 'center',
     marginBottom: '1rem',
-    color: '#F6C697',
+    color: '#D4A574',
   },
   name: {
     fontFamily: 'var(--font-serif)',
     fontSize: '2rem', fontWeight: 700,
-    color: '#1C1A19', lineHeight: 1.2,
+    color: '#2D251F', lineHeight: 1.2,
   },
-  title: { fontSize: '1.1rem', color: '#9A9490', marginTop: '0.5rem' },
+  title: { fontSize: '1.1rem', color: '#9A8970', marginTop: '0.5rem' },
   section: { marginBottom: '2rem' },
   sectionTitle: {
     fontFamily: 'var(--font-serif)',
     fontSize: '1.5rem', fontWeight: 600,
-    color: '#1C1A19', marginBottom: '1rem',
+    color: '#2D251F', marginBottom: '1rem',
   },
   infoBlock: { 
-    background: '#FAF8F3',
+    background: '#FEFBF7',
     padding: '1.5rem',
     borderRadius: 10,
-    border: '1px solid #E8E0D3',
+    border: '1px solid #EDE5DB',
   },
   infoRow: {
     display: 'flex', gap: '1rem',
     marginBottom: '0.75rem',
     fontSize: '0.95rem',
   },
-  label: { fontWeight: 600, color: '#6B5E56', minWidth: '120px' },
-  value: { color: '#1C1A19' },
+  label: { fontWeight: 600, color: '#6B6058', minWidth: '120px' },
+  value: { color: '#2D251F' },
   description: {
-    fontSize: '0.95rem', color: '#6B5E56',
+    fontSize: '0.95rem', color: '#6B6058',
     lineHeight: 1.8, marginBottom: '1rem',
   },
   techStack: {
@@ -203,15 +203,15 @@ const s = {
   tech: {
     display: 'flex', alignItems: 'center', gap: '0.75rem',
     padding: '1rem',
-    background: '#FAF8F3', borderRadius: 8,
-    border: '1px solid #E8E0D3',
-    fontSize: '0.9rem', color: '#6B5E56',
+    background: '#FEFBF7', borderRadius: 8,
+    border: '1px solid #EDE5DB',
+    fontSize: '0.9rem', color: '#6B6058',
   },
   techIcon: { fontSize: '1.2rem' },
   featureList: {
     listStyle: 'none',
     display: 'flex', flexDirection: 'column', gap: '0.75rem',
-    fontSize: '0.95rem', color: '#6B5E56',
+    fontSize: '0.95rem', color: '#6B6058',
     lineHeight: 1.8,
   },
 }
