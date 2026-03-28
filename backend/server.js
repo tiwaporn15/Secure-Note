@@ -171,6 +171,25 @@ app.post('/api/logout', (req, res) => {
   return res.status(200).json({ message: 'Logged out successfully' });
 });
 
+/**
+ * GET /api/me
+ * Returns current user info if they have a valid session.
+ * Used by frontend to restore session on page refresh.
+ */
+app.get('/api/me', (req, res) => {
+  const cookies = parseCookies(req.headers.cookie);
+  const sessionId = cookies.sessionId;
+  
+  if (!sessionId || !sessions.has(sessionId)) {
+    console.log('[/api/me] No valid session found');
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  
+  const session = sessions.get(sessionId);
+  console.log('[/api/me] Valid session found for:', session.username);
+  return res.status(200).json({ username: session.username });
+});
+
 
 /**
  * GET /api/notes
