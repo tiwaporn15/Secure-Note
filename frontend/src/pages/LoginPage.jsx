@@ -68,7 +68,6 @@ export default function LoginPage({ onLogin, onNavigate }) {
         setPassword('')
         setConfirmPassword('')
         setIsSignUp(false)
-        alert('✅ Account created! Please log in now.')
       } else {
         // Login successful
         onLogin(username.trim())
@@ -131,12 +130,6 @@ export default function LoginPage({ onLogin, onNavigate }) {
       {/* ── Form panel (centered) ── */}
       <div className="login-right" style={{ ...s.loginContainer }}>
         <div style={s.card}>
-
-          {/* Logo shown only on mobile (left panel is hidden) */}
-          <div style={s.mobileLogoWrap}>
-            <HeartIcon color="var(--brown)" />
-            <span style={s.mobileLogoText}>SecureNote</span>
-          </div>
 
           <div style={s.cardHeader}>
             <h1 style={s.cardTitle}>{isSignUp ? 'Create your account' : 'How was your day?'}</h1>
