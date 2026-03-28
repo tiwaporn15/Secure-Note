@@ -179,13 +179,6 @@ export default function NotesPage({ username, onLogout, onNavigate }) {
             <span style={s.brandName}>SecureNote</span>
           </div>
 
-          {/* Nav Links */}
-          <div style={s.navLinks}>
-            <button onClick={() => onNavigate('home')} style={s.navLink}>Home</button>
-            <button onClick={() => onNavigate('about')} style={s.navLink}>About</button>
-            <button onClick={() => onNavigate('contact')} style={s.navLink}>Contact</button>
-          </div>
-
           {/* Right side */}
           <div style={s.navRight}>
             <div style={s.userChip}>
