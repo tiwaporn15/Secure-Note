@@ -34,7 +34,7 @@ const sessions = new Map();  // {sessionId}: {username, role, loginTime}
 
 // ─── Middleware ─────────────────────────────────────────────────────────────
 app.use(cors({
-  origin: 'http://localhost:5173',  // Vite dev server
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',  // Support both dev and production
   credentials: true,                 // Allow cookies in cross-origin requests
 }));
 app.use(express.json());    // Parse incoming JSON request bodies
@@ -111,7 +111,7 @@ app.post('/api/login', (req, res) => {
     console.log(`[Login] New session created - Username: ${username}, SessionId: ${sessionId}, Role: ${user.role}`);
 
     // Set session cookie with CORS-friendly flags
-    res.setHeader('Set-Cookie', `sessionId=${sessionId}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400`);
+    res.setHeader('Set-Cookie', `sessionId=${sessionId}; Path=/; HttpOnly; SameSite=None; Secure; Max-Age=86400`);
     return res.status(200).json({ message: 'Login successful', username, role: user.role });
   }
 
@@ -135,7 +135,7 @@ app.post('/api/logout', (req, res) => {
     console.log('[Logout] Session deleted for:', sessionId);
   }
   // Send Set-Cookie header to clear cookie on client
-  res.setHeader('Set-Cookie', 'sessionId=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
+  res.setHeader('Set-Cookie', 'sessionId=; Path=/; HttpOnly; SameSite=None; Secure; Max-Age=0');
   return res.status(200).json({ message: 'Logged out successfully' });
 });
 
