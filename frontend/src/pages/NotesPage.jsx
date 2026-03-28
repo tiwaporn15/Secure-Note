@@ -140,15 +140,16 @@ export default function NotesPage({ username, onLogout, onNavigate }) {
     setLoading(true)
     try {
       const res = await retryFetch(`${API_BASE}/logout`, { method: 'POST' })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      console.log('[handleLogout] Response:', res.status)
+      if (!res.ok) {
+        console.warn('[handleLogout] Server returned error, but proceeding with local logout')
+      }
     } catch (err) {
-      console.error('[handleLogout]', err)
-      setError(formatErrorMessage(err))
-      setLoading(false)
-      return
+      console.error('[handleLogout] Request error:', err)
+      // Continue with logout even if request fails (session might already be cleared)
     }
     setLoading(false)
-    onLogout()
+    onLogout()  // Always redirect to login, regardless of API response
   }
 
   async function handleDelete(id) {
