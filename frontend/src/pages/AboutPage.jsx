@@ -3,7 +3,7 @@
  */
 
 const HeartIcon = ({ size = 20 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="#D4A574" stroke="none">
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="#B8956A" stroke="none">
     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
   </svg>
 )
@@ -143,7 +143,7 @@ const s = {
   navRight: { display: 'flex', alignItems: 'center', gap: '2rem' },
   navLink: { 
     background: 'none', border: 'none', 
-    fontSize: '0.95rem', color: '#9A8970',
+    fontSize: '0.95rem', color: '#9A8570',
     cursor: 'pointer', transition: 'color 0.2s', fontFamily: 'var(--font-sans)',
     fontWeight: 500,
   },
@@ -165,19 +165,19 @@ const s = {
   avatar: { 
     display: 'flex', justifyContent: 'center', alignItems: 'center',
     marginBottom: '1rem',
-    color: '#D4A574',
+    color: '#B8956A',
   },
   name: {
     fontFamily: 'var(--font-serif)',
     fontSize: '2rem', fontWeight: 700,
-    color: '#2D251F', lineHeight: 1.2,
+    color: '#3D3228', lineHeight: 1.2,
   },
-  title: { fontSize: '1.1rem', color: '#9A8970', marginTop: '0.5rem' },
+  title: { fontSize: '1.1rem', color: '#9A8570', marginTop: '0.5rem' },
   section: { marginBottom: '2rem' },
   sectionTitle: {
     fontFamily: 'var(--font-serif)',
     fontSize: '1.5rem', fontWeight: 600,
-    color: '#2D251F', marginBottom: '1rem',
+    color: '#3D3228', marginBottom: '1rem',
   },
   infoBlock: { 
     background: '#FEFBF7',
@@ -190,10 +190,10 @@ const s = {
     marginBottom: '0.75rem',
     fontSize: '0.95rem',
   },
-  label: { fontWeight: 600, color: '#6B6058', minWidth: '120px' },
-  value: { color: '#2D251F' },
+  label: { fontWeight: 600, color: '#745C4E', minWidth: '120px' },
+  value: { color: '#3D3228' },
   description: {
-    fontSize: '0.95rem', color: '#6B6058',
+    fontSize: '0.95rem', color: '#745C4E',
     lineHeight: 1.8, marginBottom: '1rem',
   },
   techStack: {
@@ -203,15 +203,15 @@ const s = {
   tech: {
     display: 'flex', alignItems: 'center', gap: '0.75rem',
     padding: '1rem',
-    background: '#FEFBF7', borderRadius: 8,
-    border: '1px solid #EDE5DB',
-    fontSize: '0.9rem', color: '#6B6058',
+    background: '#F5EDE2', borderRadius: 8,
+    border: '1px solid #E0D5C8',
+    fontSize: '0.9rem', color: '#745C4E',
   },
   techIcon: { fontSize: '1.2rem' },
   featureList: {
     listStyle: 'none',
     display: 'flex', flexDirection: 'column', gap: '0.75rem',
-    fontSize: '0.95rem', color: '#6B6058',
+    fontSize: '0.95rem', color: '#745C4E',
     lineHeight: 1.8,
   },
 }

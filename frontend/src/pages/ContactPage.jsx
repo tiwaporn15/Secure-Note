@@ -3,7 +3,7 @@
  */
 
 const HeartIcon = ({ size = 20 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="#D4A574" stroke="none">
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="#B8956A" stroke="none">
     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
   </svg>
 )
@@ -217,43 +217,43 @@ const s = {
   title: {
     fontFamily: 'var(--font-serif)',
     fontSize: '2.2rem', fontWeight: 700,
-    color: '#2D251F', marginBottom: '0.5rem',
+    color: '#3D3228', marginBottom: '0.5rem',
   },
-  subtitle: { fontSize: '1rem', color: '#9A8970', lineHeight: 1.6 },
+  subtitle: { fontSize: '1rem', color: '#9A8570', lineHeight: 1.6 },
   contactGrid: {
     display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
     gap: '1.5rem', marginBottom: '2.5rem',
   },
   contactCard: {
-    background: '#FEFBF7',
+    background: '#F5EDE2',
     padding: '1.5rem',
     borderRadius: 12,
-    border: '1px solid #EDE5DB',
+    border: '1px solid #E0D5C8',
     textAlign: 'center',
   },
   contactIcon: { 
     display: 'flex', justifyContent: 'center', alignItems: 'center',
     marginBottom: '0.5rem', 
-    color: '#D4A574',
+    color: '#B8956A',
   },
   contactTitle: {
     fontFamily: 'var(--font-serif)',
     fontSize: '1.1rem', fontWeight: 600,
-    color: '#2D251F', marginBottom: '0.25rem',
+    color: '#3D3228', marginBottom: '0.25rem',
   },
-  contactSub: { fontSize: '0.8rem', color: '#9A8970', marginBottom: '0.75rem' },
+  contactSub: { fontSize: '0.8rem', color: '#9A8570', marginBottom: '0.75rem' },
   contactLink: {
     display: 'inline-block',
-    color: '#D4A574', textDecoration: 'none',
+    color: '#B8956A', textDecoration: 'none',
     fontWeight: 600, fontSize: '0.95rem',
     transition: 'color 0.2s',
   },
-  contactValue: { fontSize: '0.9rem', color: '#2D251F', fontWeight: 500 },
+  contactValue: { fontSize: '0.9rem', color: '#3D3228', fontWeight: 500 },
   section: { marginBottom: '2.5rem' },
   sectionTitle: {
     fontFamily: 'var(--font-serif)',
     fontSize: '1.4rem', fontWeight: 600,
-    color: '#2D251F', marginBottom: '1.25rem',
+    color: '#3D3228', marginBottom: '1.25rem',
     textAlign: 'center',
   },
   socialLinks: {
@@ -262,13 +262,13 @@ const s = {
   socialBtn: {
     width: '50px', height: '50px',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    background: '#D4A574', color: 'white',
+    background: '#B8956A', color: 'white',
     borderRadius: '50%', textDecoration: 'none',
     fontSize: '1.2rem', transition: 'transform 0.2s, background 0.2s',
     fontWeight: 600,
   },
   messageSection: { 
-    borderTop: '1px solid #F5EFE8', 
+    borderTop: '1px solid #EDE4D6', 
     paddingTop: '2rem',
   },
   form: {
@@ -277,7 +277,7 @@ const s = {
   },
   input: {
     padding: '0.85rem 1rem',
-    border: '1.5px solid #EDE5DB',
+    border: '1.5px solid #E0D5C8',
     borderRadius: 8,
     fontSize: '0.95rem',
     fontFamily: 'var(--font-sans)',
@@ -286,7 +286,7 @@ const s = {
   },
   textarea: {
     padding: '0.85rem 1rem',
-    border: '1.5px solid #EDE5DB',
+    border: '1.5px solid #E0D5C8',
     borderRadius: 8,
     fontSize: '0.95rem',
     fontFamily: 'var(--font-sans)',
@@ -296,7 +296,7 @@ const s = {
   },
   submitBtn: {
     padding: '0.9rem 1.5rem',
-    background: '#D4A574', color: 'white',
+    background: '#B8956A', color: 'white',
     border: 'none', borderRadius: 8,
     fontSize: '0.95rem', fontWeight: 600,
     cursor: 'pointer',
