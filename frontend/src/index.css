@@ -153,15 +153,15 @@ body {
 
 /* ── Navbar Responsive ───────────────────────────────── */
 .nav-links-desktop {
-  display: none;
+  display: none !important;
 }
 
 .nav-hamburger {
-  display: flex;
+  display: flex !important;
 }
 
 .nav-mobile-menu {
-  display: flex;
+  display: flex !important;
 }
 
 @media (min-width: 768px) {

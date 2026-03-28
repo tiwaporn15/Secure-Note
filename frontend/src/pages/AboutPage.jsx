@@ -38,7 +38,7 @@ export default function AboutPage({ onNavigate }) {
           <div style={s.card}>
             <div style={s.header}>
               <div style={s.avatar}><PersonIcon /></div>
-              <h1 style={s.name}>ทิวาพร ปานพุ่มชื่น</h1>
+              <h1 style={s.name}>Tiwaporn Panpomchuen</h1>
               <p style={s.title}>Full-Stack Developer | Student</p>
             </div>
 
