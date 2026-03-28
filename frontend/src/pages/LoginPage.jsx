@@ -19,6 +19,7 @@ export default function LoginPage({ onLogin, onNavigate }) {
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
+  const [isSignUp, setIsSignUp] = useState(false)  // Toggle between Login/Sign Up
   const [quoteIdx]              = useState(() => Math.floor(Math.random() * QUOTES.length))
   const quote = QUOTES[quoteIdx]
 
@@ -29,24 +30,40 @@ export default function LoginPage({ onLogin, onNavigate }) {
     }
     setError('')
     setLoading(true)
+    
+    const endpoint = isSignUp ? '/register' : '/login'
+    
     try {
-      const res = await fetch(`${API_BASE}/login`, {
+      const res = await fetch(`${API_BASE}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',  // Allow cookies to be set/sent
+        credentials: 'include',
         body: JSON.stringify({ username: username.trim(), password: password.trim() }),
         signal: AbortSignal.timeout(5000),
       })
+      
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.message || `Login failed: ${res.status}`)
+        throw new Error(data.message || `${isSignUp ? 'Sign up' : 'Login'} failed: ${res.status}`)
       }
+      
       const data = await res.json()
-      onLogin(username.trim())
+      
+      if (isSignUp) {
+        // After sign up, show success and switch to login
+        setError('')
+        setUsername('')
+        setPassword('')
+        setIsSignUp(false)
+        alert('✅ Account created! Please log in now.')
+      } else {
+        // Login successful
+        onLogin(username.trim())
+      }
     } catch (err) {
       if (err.name === 'TimeoutError' || err.name === 'AbortError') {
-        setError('Server is not responding. Is the backend running on port 3001?')
-      } else if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError') || err.message.includes('net::')) {
+        setError('Server is not responding. Is the backend running?')
+      } else if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
         setError('Cannot reach the backend. Run: cd backend && npm start')
       } else {
         setError(err.message)
@@ -109,8 +126,28 @@ export default function LoginPage({ onLogin, onNavigate }) {
           </div>
 
           <div style={s.cardHeader}>
-            <h1 style={s.cardTitle}>How was your day?</h1>
-            <p style={s.cardSub}>Log in to pour your heart out. Your thoughts are always safe with us.</p>
+            <h1 style={s.cardTitle}>{isSignUp ? 'Create your account' : 'How was your day?'}</h1>
+            <p style={s.cardSub}>
+              {isSignUp 
+                ? 'Set up your account and start sharing your thoughts.'
+                : 'Log in to pour your heart out. Your thoughts are always safe with us.'}
+            </p>
+          </div>
+
+          {/* Login/Sign Up Tabs */}
+          <div style={s.tabs}>
+            <button
+              onClick={() => { setIsSignUp(false); setError('') }}
+              style={{ ...s.tabBtn, ...(isSignUp ? {} : s.tabBtnActive) }}
+            >
+              Log In
+            </button>
+            <button
+              onClick={() => { setIsSignUp(true); setError('') }}
+              style={{ ...s.tabBtn, ...(isSignUp ? s.tabBtnActive : {}) }}
+            >
+              Sign Up
+            </button>
           </div>
 
           <form onSubmit={handleSubmit} style={s.form}>
@@ -162,14 +199,16 @@ export default function LoginPage({ onLogin, onNavigate }) {
               style={{ ...s.submitBtn, opacity: (!username || !password || loading) ? 0.55 : 1, cursor: (!username || !password || loading) ? 'not-allowed' : 'pointer' }}
             >
               {loading
-                ? <><Spinner /> <span>Logging in…</span></>
-                : <><span>Log in</span> </>
+                ? <><Spinner /> <span>{isSignUp ? 'Creating account…' : 'Logging in…'}</span></>
+                : <><span>{isSignUp ? 'Create Account' : 'Log In'}</span> </>
               }
             </button>
           </form>
 
           <p style={s.hintText}>
-            Demo: <code style={s.code}>admin</code> / <code style={s.code}>admin123</code>
+            {isSignUp 
+              ? 'Already have an account? Click the "Log In" tab above.'
+              : 'New here? Click the "Sign Up" tab to create an account.'}
           </p>
         </div>
       </div>
@@ -253,6 +292,11 @@ const s = {
   cardHeader: { display:'flex', flexDirection:'column', gap:'0.35rem' },
   cardTitle: { fontFamily:'var(--font-serif)', fontSize:'clamp(1.6rem,5vw,2.1rem)', fontWeight:500, color:'var(--charcoal)', lineHeight:1.15 },
   cardSub: { fontSize:'0.9rem', color:'var(--charcoal-3)', fontWeight:300 },
+  
+  tabs: { display:'flex', gap:'0.5rem', borderBottom:'1px solid var(--cream-3)', padding:'0 0 0.75rem' },
+  tabBtn: { flex:1, background:'none', border:'none', padding:'0.5rem 0', fontSize:'0.9rem', fontWeight:500, color:'var(--charcoal-4)', cursor:'pointer', borderBottom:'2px solid transparent', transition:'all 0.2s' },
+  tabBtnActive: { color:'var(--brown)', borderBottomColor:'var(--brown)' },
+  
   form: { display:'flex', flexDirection:'column', gap:'1.25rem' },
   fieldGroup: { display:'flex', flexDirection:'column', gap:'0.5rem' },
   label: { fontSize:'0.72rem', fontWeight:500, letterSpacing:'0.1em', textTransform:'uppercase', color:'var(--charcoal-2)' },

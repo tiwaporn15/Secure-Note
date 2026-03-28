@@ -85,6 +85,40 @@ const phHeaders = {
 // ─── Routes ─────────────────────────────────────────────────────────────────
 
 /**
+ * POST /api/register
+ * Creates a new user account.
+ * Body: { username: string, password: string }
+ * Returns: { message: string, username: string } on success
+ */
+app.post('/api/register', (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({
+      error: 'Bad Request',
+      message: 'Both username and password are required.',
+    });
+  }
+
+  // Check if user already exists
+  if (users.has(username)) {
+    return res.status(409).json({
+      error: 'Conflict',
+      message: 'Username already exists. Please choose another.',
+    });
+  }
+
+  // Create new user
+  users.set(username, { password });
+  console.log(`[Register] New user created: ${username}`);
+
+  return res.status(201).json({
+    message: 'Account created successfully! You can now log in.',
+    username,
+  });
+});
+
+/**
  * POST /api/login
  * Authenticates user with username/password.
  * Body: { username: string, password: string }
