@@ -265,11 +265,11 @@ export default function NotesPage({ username, onLogout, onNavigate }) {
                   onDelete={handleDelete}
                   deleting={deletingId === note.id}
                   currentUsername={username}
-                  currentRole={role}
                   animDelay={idx * 50}
                 />
               ))}
             </div>
+          )}
 
         </div>
       </main>
