@@ -227,14 +227,14 @@ export default function NotesPage({ username, onLogout, onNavigate }) {
           {/* Page header row */}
           <div style={s.pageHeader}>
             <div>
-              <h2 style={s.pageTitle}>{role === 'admin' ? 'All Notes' : 'Your Stories'}</h2>
-              <p style={s.pageSub}>All Notes</h2>
+              <h2 style={s.pageTitle}>All Notes</h2>
               <p style={s.pageSub}>
                 {loading
                   ? 'Gathering your memories…'
                   : filteredNotes.length === 0
                     ? 'No notes yet. Start creating!'
-                    : `${filteredNotes.length} ${filteredNotes.length === 1 ? 'note' : 'notes'} kept safe
+                    : `${filteredNotes.length} ${filteredNotes.length === 1 ? 'note' : 'notes'} kept safe`}
+              </p>
             </div>
             {!showCompose && (
               <button onClick={() => setShowCompose(true)} style={s.addBtn}>
