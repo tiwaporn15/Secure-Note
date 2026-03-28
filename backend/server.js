@@ -27,10 +27,9 @@ const POCKETHOST_BASE  =
 
 // ─── Simple in-memory user store (for demo purposes) ─────────────────────────
 const users = new Map([
-  ['user123', { password: 'password123', role: 'user' }],
-  ['admin', { password: 'admin123', role: 'admin' }],
+  ['admin', { password: 'admin123' }],
 ]);
-const sessions = new Map();  // {sessionId}: {username, role, loginTime}
+const sessions = new Map();  // {sessionId}: {username, loginTime}
 
 // ─── Middleware ─────────────────────────────────────────────────────────────
 app.use(cors({
@@ -103,16 +102,15 @@ app.post('/api/login', (req, res) => {
 
   // Check credentials
   if (users.has(username) && users.get(username).password === password) {
-    // Create session with role
-    const user = users.get(username);
+    // Create session
     const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    sessions.set(sessionId, { username, role: user.role, loginTime: new Date() });
+    sessions.set(sessionId, { username, loginTime: new Date() });
     
-    console.log(`[Login] New session created - Username: ${username}, SessionId: ${sessionId}, Role: ${user.role}`);
+    console.log(`[Login] New session created - Username: ${username}, SessionId: ${sessionId}`);
 
     // Set session cookie with CORS-friendly flags
     res.setHeader('Set-Cookie', `sessionId=${sessionId}; Path=/; HttpOnly; SameSite=None; Secure; Max-Age=86400`);
-    return res.status(200).json({ message: 'Login successful', username, role: user.role });
+    return res.status(200).json({ message: 'Login successful', username });
   }
 
   console.log(`[Login] Failed attempt for username: ${username}`);
@@ -150,6 +148,7 @@ app.post('/api/logout', (req, res) => {
 app.get('/api/notes', requireSession, async (req, res) => {
   try {
     console.log(`[/api/notes] Fetching for user: ${req.session.username}, role: ${req.session.role}`);
+    const response = await fetch(notes for user: ${req.session.username}`);
     const response = await fetch(
       `${POCKETHOST_BASE}?sort=-created&perPage=100`,
       { headers: phHeaders }
@@ -165,25 +164,8 @@ app.get('/api/notes', requireSession, async (req, res) => {
     const data = await response.json();
 
     // PocketBase returns { items: [...] } or { items: null } on empty
-    let notes = data.items ?? [];
+    const notes = data.items ?? [];
     console.log(`[/api/notes] Total notes in database: ${notes.length}`);
-    
-    // Filter notes by role
-    if (req.session.role === 'user') {
-      // Regular users only see their own notes
-      // Handle both 'owner' field and missing owner (backward compatibility)
-      notes = notes.filter(note => {
-        // If note has owner, it must match current user
-        if (note.owner !== undefined && note.owner !== null) {
-          return note.owner === req.session.username
-        }
-        // If no owner field, user can't see it (security: unowned notes are hidden)
-        return false
-      });
-      console.log(`[/api/notes] Filtered to user's own notes: ${notes.length}`);
-    }
-    // Admin sees all notes
-    
     return res.status(200).json(notes);
   } catch (err) {
     console.error('[/api/notes] error:', err.message);
@@ -260,40 +242,21 @@ app.delete('/api/notes/:id', requireSession, async (req, res) => {
       return res.status(502).json({ error: 'Failed to fetch note from database' });
     }
 
-    const note = await getResponse.json();
-
-    // Check permissions
-    if (req.session.role === 'user' && note.owner !== req.session.username) {
-      return res.status(403).json({
-        error: 'Forbidden',
-        message: 'You can only delete your own notes.',
-      });
-    }
-
-    // Delete the note
+    conDelete the note
     const deleteResponse = await fetch(`${POCKETHOST_BASE}/${id}`, {
       method:  'DELETE',
       headers: phHeaders,
     });
 
-    if (!deleteResponse.ok) {
-      return res.status(502).json({ error: 'Failed to delete note from database' });
+    if (deleteResponse.status === 404) {
+      return res.status(404).json({
+        error: 'Not Found',
+        message: `Note with id "${id}" does not exist.`,
+      });
     }
 
-    return res.status(200).json({ message: `Note "${id}" deleted successfully.` });
-  } catch (err) {
-    console.error(`DELETE /api/notes/${id} error:`, err.message);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-// ─── 404 catch-all ──────────────────────────────────────────────────────────
-app.use((req, res) => {
-  res.status(404).json({ error: 'Not Found', path: req.originalUrl });
-});
-
 // ─── Start server ───────────────────────────────────────────────────────────
-app.listen(PORT, () => {
+app.listen(PORT,"0.0.0.0", () => {
   console.log(`\n🔐 SecureNote API running → http://localhost:${PORT}`);
   console.log(`   POST   http://localhost:${PORT}/api/login  (username/password)`);
   console.log(`   POST   http://localhost:${PORT}/api/logout`);
@@ -304,3 +267,4 @@ app.listen(PORT, () => {
   console.log(`   Regular User:  user123 / password123 (sees only their notes)`);
   console.log(`   Admin:         admin / admin123 (sees all notes)\n`);
 });
+Admin:  admin / admin123
