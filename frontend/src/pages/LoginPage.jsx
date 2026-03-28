@@ -169,7 +169,7 @@ export default function LoginPage({ onLogin, onNavigate }) {
           </form>
 
           <p style={s.hintText}>
-            Demo: <code style={s.code}>user123</code> / <code style={s.code}>password123</code> (user) or <code style={s.code}>admin</code> / <code style={s.code}>admin123</code> (admin)
+            Demo: <code style={s.code}>admin</code> / <code style={s.code}>admin123</code>
           </p>
         </div>
       </div>
