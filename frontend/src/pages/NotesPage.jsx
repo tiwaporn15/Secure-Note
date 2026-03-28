@@ -59,7 +59,7 @@ function formatErrorMessage(err) {
   return `❌ ${msg}`
 }
 
-export default function NotesPage({ username, role, onLogout, onNavigate }) {
+export default function NotesPage({ username, onLogout, onNavigate }) {
   const [notes, setNotes]             = useState([])
   const [loading, setLoading]         = useState(true)
   const [error, setError]             = useState('')
@@ -67,17 +67,8 @@ export default function NotesPage({ username, role, onLogout, onNavigate }) {
   const [deletingId, setDeletingId]   = useState(null)
   const [retryCount, setRetryCount]   = useState(0)
 
-  // Get filtered notes based on role
-  const getFilteredNotes = (allNotes) => {
-    if (role === 'admin') return allNotes // admin sees all
-    // Users see only their own notes
-    return allNotes.filter(n => {
-      const noteOwner = n.owner !== undefined ? n.owner : n.username
-      return noteOwner === username
-    })
-  }
-
-  const filteredNotes = getFilteredNotes(notes)
+  // Admin always sees all notes
+  const filteredNotes = notes
 
   // Save notes to localStorage whenever they change
   useEffect(() => {
@@ -165,7 +156,6 @@ export default function NotesPage({ username, role, onLogout, onNavigate }) {
     try {
       const res = await retryFetch(`${API_BASE}/notes/${id}`, { method: 'DELETE' })
       if (res.status === 401) { setError('🔐 Session expired — please log in again'); return }
-      if (res.status === 403) { setError('🚫 You can only delete your own notes'); return }
       if (!res.ok && res.status !== 404) { setError(formatErrorMessage(new Error(`HTTP ${res.status}`))); return }
       setNotes(prev => prev.filter(n => n.id !== id))
     } catch (err) {
@@ -201,7 +191,6 @@ export default function NotesPage({ username, role, onLogout, onNavigate }) {
             <div style={s.userChip}>
               <span style={s.userDot} />
               <span style={s.userName}>{username}</span>
-              {role === 'admin' && <span style={s.adminBadge}>admin</span>}
             </div>
             <button onClick={loadNotes} style={s.ghostBtn} title="Refresh" aria-label="Refresh">
               <RefreshIcon />
@@ -239,17 +228,13 @@ export default function NotesPage({ username, role, onLogout, onNavigate }) {
           <div style={s.pageHeader}>
             <div>
               <h2 style={s.pageTitle}>{role === 'admin' ? 'All Notes' : 'Your Stories'}</h2>
+              <p style={s.pageSub}>All Notes</h2>
               <p style={s.pageSub}>
                 {loading
                   ? 'Gathering your memories…'
                   : filteredNotes.length === 0
-                    ? role === 'admin'
-                      ? 'No notes yet. Start creating!'
-                      : 'A blank page, waiting for your heart to speak.'
-                    : role === 'admin'
-                      ? `${filteredNotes.length} ${filteredNotes.length === 1 ? 'note' : 'notes'} from all users`
-                      : `${filteredNotes.length} ${filteredNotes.length === 1 ? 'moment' : 'moments'} from your life, safely held here.`}
-              </p>
+                    ? 'No notes yet. Start creating!'
+                    : `${filteredNotes.length} ${filteredNotes.length === 1 ? 'note' : 'notes'} kept safe
             </div>
             {!showCompose && (
               <button onClick={() => setShowCompose(true)} style={s.addBtn}>
@@ -285,7 +270,6 @@ export default function NotesPage({ username, role, onLogout, onNavigate }) {
                 />
               ))}
             </div>
-          )}
 
         </div>
       </main>

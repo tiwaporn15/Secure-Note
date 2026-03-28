@@ -42,7 +42,7 @@ export default function LoginPage({ onLogin, onNavigate }) {
         throw new Error(data.message || `Login failed: ${res.status}`)
       }
       const data = await res.json()
-      onLogin(username.trim(), data.role)
+      onLogin(username.trim())
     } catch (err) {
       if (err.name === 'TimeoutError' || err.name === 'AbortError') {
         setError('Server is not responding. Is the backend running on port 3001?')

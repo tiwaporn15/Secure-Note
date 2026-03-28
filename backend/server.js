@@ -116,7 +116,7 @@ app.post('/api/login', (req, res) => {
   console.log(`[Login] Failed attempt for username: ${username}`);
   return res.status(401).json({
     error: 'Unauthorized',
-    message: 'Invalid username or password. Try user123:password123 or admin:admin123',
+    message: 'Invalid username or password. Try admin:admin123',
   });
 });
 
@@ -147,8 +147,7 @@ app.post('/api/logout', (req, res) => {
  */
 app.get('/api/notes', requireSession, async (req, res) => {
   try {
-    console.log(`[/api/notes] Fetching for user: ${req.session.username}, role: ${req.session.role}`);
-    const response = await fetch(notes for user: ${req.session.username}`);
+    console.log(`[/api/notes] Fetching notes for user: ${req.session.username}`);
     const response = await fetch(
       `${POCKETHOST_BASE}?sort=-created&perPage=100`,
       { headers: phHeaders }
@@ -226,23 +225,7 @@ app.delete('/api/notes/:id', requireSession, async (req, res) => {
   const { id } = req.params;
 
   try {
-    // First, fetch the note to check ownership
-    const getResponse = await fetch(`${POCKETHOST_BASE}/${id}`, {
-      headers: phHeaders,
-    });
-
-    if (getResponse.status === 404) {
-      return res.status(404).json({
-        error: 'Not Found',
-        message: `Note with id "${id}" does not exist.`,
-      });
-    }
-
-    if (!getResponse.ok) {
-      return res.status(502).json({ error: 'Failed to fetch note from database' });
-    }
-
-    conDelete the note
+    // Delete the note
     const deleteResponse = await fetch(`${POCKETHOST_BASE}/${id}`, {
       method:  'DELETE',
       headers: phHeaders,
@@ -255,6 +238,22 @@ app.delete('/api/notes/:id', requireSession, async (req, res) => {
       });
     }
 
+    if (!deleteResponse.ok) {
+      return res.status(502).json({ error: 'Failed to delete note from database' });
+    }
+
+    return res.status(200).json({ message: `Note "${id}" deleted successfully.` });
+  } catch (err) {
+    console.error(`DELETE /api/notes/${id} error:`, err.message);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// ─── 404 catch-all ──────────────────────────────────────────────────────────
+app.use((req, res) => {
+  res.status(404).json({ error: 'Not Found', path: req.originalUrl });
+});
+
 // ─── Start server ───────────────────────────────────────────────────────────
 app.listen(PORT,"0.0.0.0", () => {
   console.log(`\n🔐 SecureNote API running → http://localhost:${PORT}`);
@@ -264,7 +263,5 @@ app.listen(PORT,"0.0.0.0", () => {
   console.log(`   POST   http://localhost:${PORT}/api/notes  (Login required)`);
   console.log(`   DELETE http://localhost:${PORT}/api/notes/:id  (Login required)\n`);
   console.log(`📝 Demo credentials:`);
-  console.log(`   Regular User:  user123 / password123 (sees only their notes)`);
-  console.log(`   Admin:         admin / admin123 (sees all notes)\n`);
+  console.log(`   Admin:  admin / admin123\n`);
 });
-Admin:  admin / admin123
