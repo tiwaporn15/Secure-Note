@@ -188,8 +188,9 @@ export default function NotesPage({ username, onLogout, onNavigate }) {
             <button onClick={loadNotes} style={s.ghostBtn} title="Refresh" aria-label="Refresh">
               <RefreshIcon />
             </button>
-            <button onClick={handleLogout} style={s.signOutBtn} title="Logout" aria-label="Logout">
+            <button onClick={handleLogout} style={s.signOutBtn} title="Logout" aria-label="Logout" className="logout-btn-desktop">
               <LogoutIcon />
+              <span className="logout-text">Until next time</span>
             </button>
           </div>
 

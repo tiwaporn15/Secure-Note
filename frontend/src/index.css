@@ -221,6 +221,17 @@ body {
   animation: slideDown 0.15s ease;
 }
 
+/* ── Logout Button Responsive ── */
+.logout-text {
+  display: inline;
+}
+
+@media (max-width: 768px) {
+  .logout-text {
+    display: none;
+  }
+}
+
 /* ── Tablet (≤ 768px) ── */
 @media (max-width: 768px) {
   .login-left {
