@@ -3,18 +3,22 @@
 A modern, full-stack secure notes web application built with **React** (frontend) and **Node.js/Express** (backend) with cloud persistence via **PocketHost**.
 
 **Key Features:**
-- 🔐 Token-based authentication
-- 📝 Create, read, and delete notes
-- ☁️ Cloud persistence with PocketHost
-- ⚡ Real-time UI updates with React Virtual DOM
-- 🎨 Modern, responsive design with Vite
-- 🚀 Serverless deployment ready (Vercel)
+- Token-based authentication
+- Full CRUD operations (Create, Read, Update, Delete)
+- Real-time search by title and content
+- Sort notes by date (newest/oldest) or name (A-Z)
+- Timestamps with full date and time display
+- Cloud persistence with PocketHost (survives server restart)
+- Loading states with skeleton loaders during API calls
+- Warm, cohesive design with 2 consolidated fonts (Cormorant Garamond + Raleway)
+- Real-time UI updates with React Virtual DOM
+- Deployed on Vercel with HTTPS
 
-**Live Demo:** [https://secure-note-app.vercel.app](https://secure-note-app.vercel.app) (example URL)
+**Live Demo:** [https://secure-note-app.vercel.app](https://secure-note-app.vercel.app)
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
 1. [Project Overview](#project-overview)
 2. [Project Structure](#project-structure)
@@ -31,7 +35,7 @@ A modern, full-stack secure notes web application built with **React** (frontend
 
 ---
 
-## 🎯 Project Overview
+## Project Overview
 
 SecureNote is a demonstration of full-stack web development fundamentals, showcasing:
 
@@ -52,7 +56,7 @@ The application is designed as both a **functional utility** (actually usable no
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 secure-note-app/
@@ -66,33 +70,36 @@ secure-note-app/
 │   └── api/                    # Vercel serverless functions (optional)
 │       ├── auth.js             # POST /api/auth
 │       ├── notes.js            # GET/POST /api/notes
-│       └── notes/[id].js       # DELETE /api/notes/:id
+│       └── notes/[id].js       # PATCH/DELETE /api/notes/:id
 │
 ├── frontend/                   # React + Vite frontend
 │   ├── src/
 │   │   ├── pages/              # Page components (route views)
 │   │   │   ├── LoginPage.jsx   # Authentication UI
-│   │   │   ├── NotesPage.jsx   # Main notes grid + compose
+│   │   │   ├── NotesPage.jsx   # Main notes grid, search, sort, compose
 │   │   │   ├── AboutPage.jsx   # Project information
 │   │   │   └── ContactPage.jsx # Contact information
 │   │   │
 │   │   ├── components/         # Reusable UI components
-│   │   │   ├── NoteCard.jsx    # Single note display + delete
-│   │   │   └── ComposePanel.jsx# New note creation form
+│   │   │   ├── NoteCard.jsx    # Single note display + edit/delete
+│   │   │   ├── ComposePanel.jsx# New note creation form
+│   │   │   ├── EditModal.jsx   # Edit existing note modal
+│   │   │   ├── SearchBar.jsx   # Real-time search input (persistent)
+│   │   │   └── SearchModal.jsx # Alternative search modal
 │   │   │
 │   │   ├── App.jsx             # Root component, routing, auth state
 │   │   ├── main.jsx            # Entry point, React.createRoot()
-│   │   ├── index.css           # Global styles
+│   │   ├── index.css           # Global styles with CSS variables
 │   │   ├── config.js           # API endpoint configuration
 │   │   └── assets/             # Images, fonts, etc.
 │   │
 │   ├── index.html              # HTML template
 │   ├── vite.config.js          # Vite bundler configuration
-│   ├── package.json            # Dependencies: react, react-dom, axios, etc.
+│   ├── package.json            # Dependencies: react, react-dom, etc.
 │   ├── package-lock.json
 │   └── .gitignore
 │
-├── REPORT.md                   # Technical report (7500+ words)
+├── REPORT.md                   # Technical report (full documentation)
 ├── DEPLOY_CHECKLIST.md         # Pre-deployment verification
 ├── README.md                   # This file
 ├── .gitignore                  # Root-level git ignore
@@ -112,7 +119,7 @@ secure-note-app/
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 ### Frontend
 
@@ -153,7 +160,7 @@ secure-note-app/
 
 ---
 
-## 📦 Prerequisites
+## Prerequisites
 
 Before you begin, ensure you have:
 
@@ -188,7 +195,7 @@ Before you begin, ensure you have:
 
 ---
 
-## 🚀 Installation & Setup
+## Installation and Setup
 
 ### Step 1: Clone or Download the Repository
 
@@ -226,10 +233,10 @@ npm start
 ```
 
 **Backend Checklist:**
-- ✅ `npm install` completed without errors
-- ✅ `.env` file created with all three variables
-- ✅ Server started on `http://localhost:3001`
-- ✅ No errors in terminal output
+- npm install completed without errors
+- .env file created with all three variables
+- Server started on http://localhost:3001
+- No errors in terminal output
 
 ### Step 3: Frontend Setup (new terminal window)
 
@@ -248,10 +255,10 @@ npm run dev
 ```
 
 **Frontend Checklist:**
-- ✅ `npm install` completed without errors
-- ✅ Dev server started on `http://localhost:5173`
-- ✅ Browser opened automatically
-- ✅ See login page (should show input field for password)
+- npm install completed without errors
+- Dev server started on http://localhost:5173
+- Browser opened automatically
+- See login page (should show input field for password)
 
 ### Step 4: Test the Application
 
@@ -263,11 +270,11 @@ npm run dev
 6. **Delete a note** → Click delete button, confirm
 7. **Logout** → Redirected back to login page
 
-✅ **If all steps work, your local setup is complete!**
+If all steps work, your local setup is complete!
 
 ---
 
-## 💻 Development Workflow
+## Development Workflow
 
 ### Running Both Servers Locally
 
@@ -335,7 +342,7 @@ npm list
 
 ---
 
-## 📡 API Documentation
+## API Documentation
 
 ### Base URL
 
@@ -468,7 +475,51 @@ Authorization: SecureNote-S3cr3t-K3y-2025
 
 ---
 
-#### 4. **DELETE /api/notes/:id** — Delete Note
+#### 4. **PATCH /api/notes/:id** — Update Note
+Update an existing note (requires authentication).
+
+**Request:**
+```http
+PATCH /api/notes/note_001 HTTP/1.1
+Host: localhost:3001
+Content-Type: application/json
+Authorization: SecureNote-S3cr3t-K3y-2025
+
+{
+  "title": "Updated Title",
+  "content": "Updated content here..."
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "id": "note_001",
+  "title": "Updated Title",
+  "content": "Updated content here...",
+  "created": "2026-03-29T10:00:00Z"
+}
+```
+
+**Response (401 Unauthorized):**
+```json
+{
+  "error": "Unauthorized"
+}
+```
+
+**Response (404 Not Found):**
+```json
+{
+  "error": "Note not found"
+}
+```
+
+**Use Case:** Frontend calls when user submits changes in EditModal.
+
+---
+
+#### 5. **DELETE /api/notes/:id** — Delete Note
 Delete a note by ID (requires authentication).
 
 **Request:**
@@ -520,7 +571,13 @@ curl -X POST http://localhost:3001/api/notes \
   -H "Authorization: SecureNote-S3cr3t-K3y-2025" \
   -d '{"title":"Test Note","content":"Testing..."}'
 
-# 4. Delete a note
+# 4. Update a note (requires token)
+curl -X PATCH http://localhost:3001/api/notes/note_id_here \
+  -H "Content-Type: application/json" \
+  -H "Authorization: SecureNote-S3cr3t-K3y-2025" \
+  -d '{"title":"Updated Title","content":"Updated content..."}'
+
+# 5. Delete a note
 curl -X DELETE http://localhost:3001/api/notes/note_id_here \
   -H "Authorization: SecureNote-S3cr3t-K3y-2025"
 ```
@@ -538,7 +595,7 @@ curl -X DELETE http://localhost:3001/api/notes/note_id_here \
 
 ---
 
-## 🔐 Environment Variables
+## Environment Variables
 
 ### Backend (.env)
 
@@ -561,8 +618,8 @@ POCKETHOST_TOKEN=your-pockethost-api-token-here
 | Variable | Purpose | Example | Security |
 |----------|---------|---------|----------|
 | `PORT` | Which port the Express server listens on | `3001` | Public (shown in README) |
-| `SECRET_TOKEN` | Password for authentication | `MySecureP@ssw0rd` | 🔐 **Keep SECRET** |
-| `POCKETHOST_TOKEN` | API key for database access | `pb_eyJhbGc...` | 🔐 **Keep SECRET** |
+| `SECRET_TOKEN` | Password for authentication | `MySecureP@ssw0rd` | **Keep SECRET** |
+| `POCKETHOST_TOKEN` | API key for database access | `pb_eyJhbGc...` | **Keep SECRET** |
 
 ### Loading Environment Variables
 
@@ -575,7 +632,7 @@ const token = process.env.SECRET_TOKEN
 const pbToken = process.env.POCKETHOST_TOKEN
 ```
 
-### ⚠️ NEVER Commit .env
+NEVER Commit .env
 
 The `.gitignore` file must include:
 ```
@@ -593,7 +650,7 @@ dist/
 
 ---
 
-## 🚀 Deployment
+## Deployment
 
 ### Vercel Deployment (Recommended)
 
@@ -640,12 +697,12 @@ vercel dev
 
 ### Production Checklist
 
-- ✅ Environment variables set in Vercel dashboard
-- ✅ `.env` file is in `.gitignore` (never committed)
-- ✅ `vercel.json` configured correctly
-- ✅ Secrets are rotated/unique (not the same as development)
-- ✅ HTTPS enforced (automatic on Vercel)
-- ✅ Frontend and backend on same domain (no CORS)
+- Environment variables set in Vercel dashboard
+- .env file is in .gitignore (never committed)
+- vercel.json configured correctly
+- Secrets are rotated/unique (not the same as development)
+- HTTPS enforced (automatic on Vercel)
+- Frontend and backend on same domain (no CORS)
 
 ---
 
@@ -654,9 +711,9 @@ vercel dev
 ### Key Principles
 
 1. **Secrets in Environment Variables Only**
-   - ❌ Never hardcode `SECRET_TOKEN` in source code
-   - ✅ Always use `process.env.SECRET_TOKEN` on backend
-   - ✅ Never expose secrets in frontend code
+   - Never hardcode SECRET_TOKEN in source code
+   - Always use process.env.SECRET_TOKEN on backend
+   - Never expose secrets in frontend code
 
 2. **HTTPS in Production**
    - Development: HTTP (localhost is safe)
@@ -704,11 +761,11 @@ app.post('/api/notes', (req, res) => {
 
 ---
 
-## 🆘 Troubleshooting
+## Troubleshooting
 
-### Common Issues & Solutions
+### Common Issues and Solutions
 
-#### **Issue: `npm install` fails with ERR!**
+#### Backend fails to start with npm error
 
 **Solution:**
 ```bash
@@ -881,7 +938,7 @@ npm run dev
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 ### How to Contribute
 
