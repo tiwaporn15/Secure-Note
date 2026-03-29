@@ -296,11 +296,11 @@ const s = {
   navLogo: { display:'flex', alignItems:'center', gap:'0.5rem', cursor:'pointer' },
   navLogoText: { fontFamily:'var(--font-serif)', fontSize:'1.2rem', fontWeight:600, color:'#3D3228', letterSpacing:'0.02em' },
   navLinksDesktop: { display:'flex', alignItems:'center', gap:'2rem' },
-  navLink: { fontSize:'0.95rem', color:'#6B5838', textDecoration:'none', fontWeight:500, transition:'color 0.2s', cursor:'pointer', background:'none', border:'none', fontFamily:'inherit' },
+  navLink: { fontSize:'0.95rem', color:'#6B5838', textDecoration:'none', fontWeight:500, transition:'color 0.2s', cursor:'pointer', background:'none', border:'none', fontFamily:'var(--font-sans)' },
   navActionBtn: { background:'#B8956A', color:'white', border:'none', padding:'0.6rem 1.5rem', borderRadius:'8px', fontSize:'0.9rem', fontWeight:600, cursor:'pointer', transition:'background 0.2s' },
   hamburger: { display:'flex', alignItems:'center', justifyContent:'center', background:'none', border:'none', cursor:'pointer', color:'#2D251F' },
   mobileMenu: { display:'flex', flexDirection:'column', gap:'1rem', padding:'1rem 1.5rem', borderTop:'1px solid rgba(0,0,0,0.05)', background:'rgba(255,255,255,0.98)' },
-  mobileLink: { fontSize:'0.95rem', color:'#5A4E43', textDecoration:'none', fontWeight:500, cursor:'pointer', background:'none', border:'none', fontFamily:'inherit' },
+  mobileLink: { fontSize:'0.95rem', color:'#5A4E43', textDecoration:'none', fontWeight:500, cursor:'pointer', background:'none', border:'none', fontFamily:'var(--font-sans)' },
   mobileActionBtn: { background:'#B8956A', color:'white', border:'none', padding:'0.6rem 1.5rem', borderRadius:'8px', fontSize:'0.9rem', fontWeight:600, cursor:'pointer', width:'100%' },
 
   leftContent: { position:'relative', zIndex:1, display:'flex', flexDirection:'column', gap:'2.5rem', width:'100%' },

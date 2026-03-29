@@ -6,6 +6,8 @@ import { useState, useEffect } from 'react'
 import { API_BASE } from '../config'
 import NoteCard from '../components/NoteCard'
 import ComposePanel from '../components/ComposePanel'
+import EditModal from '../components/EditModal'
+import SearchBar from '../components/SearchBar'
 
 // ─── Helper: Retry with exponential backoff ─────────────────────────────────
 async function retryFetch(url, options = {}, maxRetries = 3) {
@@ -65,10 +67,32 @@ export default function NotesPage({ username, onLogout, onNavigate }) {
   const [error, setError]             = useState('')
   const [showCompose, setShowCompose] = useState(false)
   const [deletingId, setDeletingId]   = useState(null)
+  const [editingNote, setEditingNote] = useState(null)
+  const [saving, setSaving]           = useState(false)
   const [retryCount, setRetryCount]   = useState(0)
+  const [searchQuery, setSearchQuery]  = useState('')
+  const [sortType, setSortType]       = useState('date-newest') // 'date-newest', 'date-oldest', 'name-az'
 
-  // Admin always sees all notes
-  const filteredNotes = notes
+  // Filter notes by search query
+  const filteredNotes = notes.filter(note => {
+    const query = searchQuery.toLowerCase()
+    return (
+      note.title.toLowerCase().includes(query) ||
+      note.content.toLowerCase().includes(query)
+    )
+  })
+
+  // Sort filtered notes
+  const sortedNotes = [...filteredNotes].sort((a, b) => {
+    if (sortType === 'date-newest') {
+      return new Date(b.created) - new Date(a.created)
+    } else if (sortType === 'date-oldest') {
+      return new Date(a.created) - new Date(b.created)
+    } else if (sortType === 'name-az') {
+      return a.title.localeCompare(b.title)
+    }
+    return 0
+  })
 
   // Save notes to localStorage whenever they change
   useEffect(() => {
@@ -166,6 +190,32 @@ export default function NotesPage({ username, onLogout, onNavigate }) {
     }
   }
 
+  function handleEdit(note) {
+    setEditingNote(note)
+  }
+
+  async function handleSave(id, updates) {
+    setSaving(true)
+    setError('')
+    try {
+      const res = await retryFetch(`${API_BASE}/notes/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      })
+      if (res.status === 401) throw new Error('Unauthorized')
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const updatedNote = await res.json()
+      setNotes(prev => prev.map(n => n.id === id ? updatedNote : n))
+      setEditingNote(null)
+    } catch (err) {
+      console.error('[handleSave]', err)
+      setError(formatErrorMessage(err))
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <div style={s.root}>
 
@@ -217,6 +267,13 @@ export default function NotesPage({ username, onLogout, onNavigate }) {
             </div>
           )}
 
+          {/* Search bar */}
+          <SearchBar
+            query={searchQuery}
+            onQueryChange={setSearchQuery}
+            onClear={() => setSearchQuery('')}
+          />
+
           {/* Page header row */}
           <div style={s.pageHeader}>
             <div>
@@ -224,16 +281,29 @@ export default function NotesPage({ username, onLogout, onNavigate }) {
               <p style={s.pageSub}>
                 {loading
                   ? 'Gathering your memories…'
-                  : filteredNotes.length === 0
+                  : searchQuery
+                    ? `Found ${sortedNotes.length} ${sortedNotes.length === 1 ? 'match' : 'matches'}`
+                    : sortedNotes.length === 0
                     ? 'No notes yet. Start creating!'
-                    : `${filteredNotes.length} ${filteredNotes.length === 1 ? 'note' : 'notes'} kept safe`}
+                    : `${sortedNotes.length} ${sortedNotes.length === 1 ? 'note' : 'notes'} kept safe`}
               </p>
             </div>
-            {!showCompose && (
-              <button onClick={() => setShowCompose(true)} style={s.addBtn}>
-                <PlusIcon /> <span>Share your heart</span>
-              </button>
-            )}
+            <div style={s.headerActions}>
+              <select
+                value={sortType}
+                onChange={(e) => setSortType(e.target.value)}
+                style={s.sortSelect}
+              >
+                <option value="date-newest">Newest</option>
+                <option value="date-oldest">Oldest</option>
+                <option value="name-az">Name</option>
+              </select>
+              {!showCompose && (
+                <button onClick={() => setShowCompose(true)} style={s.addBtn}>
+                  <PlusIcon /> <span>Share your heart</span>
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Loading skeletons */}
@@ -244,18 +314,19 @@ export default function NotesPage({ username, onLogout, onNavigate }) {
           )}
 
           {/* Empty state */}
-          {!loading && filteredNotes.length === 0 && !error && (
+          {!loading && sortedNotes.length === 0 && !error && (
             <EmptyState onNew={() => setShowCompose(true)} />
           )}
 
           {/* Grid */}
-          {!loading && filteredNotes.length > 0 && (
+          {!loading && sortedNotes.length > 0 && (
             <div style={s.grid}>
-              {filteredNotes.map((note, idx) => (
+              {sortedNotes.map((note, idx) => (
                 <NoteCard
                   key={note.id}
                   note={note}
                   onDelete={handleDelete}
+                  onEdit={handleEdit}
                   deleting={deletingId === note.id}
                   currentUsername={username}
                   animDelay={idx * 50}
@@ -266,6 +337,16 @@ export default function NotesPage({ username, onLogout, onNavigate }) {
 
         </div>
       </main>
+
+      {/* Edit Modal */}
+      {editingNote && (
+        <EditModal
+          note={editingNote}
+          onSave={handleSave}
+          onCancel={() => setEditingNote(null)}
+          saving={saving}
+        />
+      )}
     </div>
   )
 }
@@ -334,6 +415,12 @@ const InfoIcon = () => (
   </svg>
 )
 
+const SearchIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9A9490" strokeWidth="2" style={{ flexShrink: 0 }}>
+    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+  </svg>
+)
+
 /* ── Styles ─────────────────────────────────────────────────────────────────── */
 const s = {
   root: {
@@ -398,7 +485,7 @@ const s = {
     display: 'flex', alignItems: 'center', gap: '0.4rem',
     background: 'none', border: '1px solid rgba(139,111,71,0.4)',
     borderRadius: 8, padding: '0.4rem 0.55rem',
-    fontSize: '0.8rem', fontFamily: 'inherit',
+    fontSize: '0.8rem', fontFamily: 'var(--font-sans)',
     color: '#6B5838', cursor: 'pointer',
     transition: 'border-color 0.2s, color 0.2s',
     whiteSpace: 'nowrap',
@@ -421,7 +508,7 @@ const s = {
   },
 
   pageHeader: {
-    display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     gap: '1rem', flexWrap: 'wrap', marginBottom: '2rem',
   },
   pageTitle: {
@@ -434,12 +521,35 @@ const s = {
     marginTop: '0.3rem', fontStyle: 'italic', letterSpacing: '0.01em',
   },
 
+  headerActions: {
+    display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap',
+  },
+  sortSelect: {
+    padding: '0.65rem 1.6rem 0.65rem 0.9rem',
+    border: '1.5px solid #D4C5B9',
+    borderRadius: 8,
+    fontSize: '0.85rem',
+    fontFamily: 'var(--font-sans)',
+    fontWeight: 500,
+    color: '#5A4638',
+    background: '#FBF9F5',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    boxShadow: '0 2px 8px rgba(107, 88, 56, 0.12)',
+    appearance: 'none',
+    backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235A4638' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'right 0.6rem center',
+    backgroundSize: '1rem',
+    paddingRight: '2.2rem',
+  },
+
   addBtn: {
     display: 'flex', alignItems: 'center', gap: '0.45rem',
     background: '#B8956A', color: 'white',
     border: 'none', borderRadius: 10,
     padding: '0.7rem 1.3rem',
-    fontSize: '0.875rem', fontWeight: 600, fontFamily: 'inherit',
+    fontSize: '0.875rem', fontWeight: 600, fontFamily: 'var(--font-sans)',
     cursor: 'pointer', flexShrink: 0,
     boxShadow: '0 4px 16px rgba(184,149,106,0.35)',
     transition: 'transform 0.15s, box-shadow 0.15s',
@@ -471,7 +581,7 @@ const es = {
     marginTop: '0.5rem',
     background: '#B8956A', color: 'white',
     border: 'none', borderRadius: 10, padding: '0.7rem 1.4rem',
-    fontSize: '0.875rem', fontWeight: 600, fontFamily: 'inherit',
+    fontSize: '0.875rem', fontWeight: 600, fontFamily: 'var(--font-sans)',
     cursor: 'pointer', boxShadow: '0 4px 14px rgba(184,149,106,0.3)',
   },
 }

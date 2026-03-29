@@ -268,6 +268,57 @@ app.post('/api/notes', requireSession, async (req, res) => {
 });
 
 /**
+ * PATCH /api/notes/:id
+ * Updates a note by ID. Requires valid session.
+ * Body: { title?: string, content?: string }
+ * Returns: 200 OK with updated note, 404 if not found.
+ */
+app.patch('/api/notes/:id', requireSession, async (req, res) => {
+  const { id } = req.params;
+  const { title, content } = req.body;
+
+  // At least one field must be provided
+  if (!title && !content) {
+    return res.status(400).json({
+      error: 'Bad Request',
+      message: 'At least one of "title" or "content" must be provided.',
+    });
+  }
+
+  try {
+    // Build update object
+    const updateData = {};
+    if (title !== undefined) updateData.title = title;
+    if (content !== undefined) updateData.content = content;
+
+    const updateResponse = await fetch(`${POCKETHOST_BASE}/${id}`, {
+      method:  'PATCH',
+      headers: phHeaders,
+      body:    JSON.stringify(updateData),
+    });
+
+    if (updateResponse.status === 404) {
+      return res.status(404).json({
+        error: 'Not Found',
+        message: `Note with id "${id}" does not exist.`,
+      });
+    }
+
+    if (!updateResponse.ok) {
+      const err = await updateResponse.json();
+      console.error('PocketHost PATCH error:', err);
+      return res.status(502).json({ error: 'Failed to update note in database' });
+    }
+
+    const updatedNote = await updateResponse.json();
+    return res.status(200).json(updatedNote);
+  } catch (err) {
+    console.error(`PATCH /api/notes/${id} error:`, err.message);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+/**
  * DELETE /api/notes/:id
  * Deletes a note by ID. Requires valid session.
  * - Admin can delete any note
@@ -314,6 +365,7 @@ app.listen(PORT,"0.0.0.0", () => {
   console.log(`   POST   http://localhost:${PORT}/api/logout`);
   console.log(`   GET    http://localhost:${PORT}/api/notes  (Login required)`);
   console.log(`   POST   http://localhost:${PORT}/api/notes  (Login required)`);
+  console.log(`   PATCH  http://localhost:${PORT}/api/notes/:id  (Login required)`);
   console.log(`   DELETE http://localhost:${PORT}/api/notes/:id  (Login required)\n`);
   console.log(`📝 Demo credentials:`);
   console.log(`   Admin:  admin / admin123\n`);

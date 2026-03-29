@@ -17,7 +17,7 @@ const MonogramAvatar = ({ name }) => {
       background: '#F5EDE2',
       border: '2px solid #E0D5C8',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontFamily: '"DM Serif Display", Georgia, serif',
+      fontFamily: 'var(--font-serif)',
       fontSize: '1.9rem', fontWeight: 400, color: '#8B6F47',
       letterSpacing: '0.02em',
       boxShadow: '0 4px 16px rgba(184,149,106,0.18)',
@@ -155,7 +155,7 @@ const s = {
   },
   brand: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
   brandName: {
-    fontFamily: '"DM Serif Display", Georgia, serif',
+    fontFamily: 'var(--font-serif)',
     fontSize: '1.15rem', fontWeight: 500,
     color: '#2D251F', letterSpacing: '0.02em',
   },
@@ -163,7 +163,7 @@ const s = {
   navLink: {
     background: 'none', border: 'none',
     fontSize: '0.9rem', color: '#9A8570',
-    cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500,
+    cursor: 'pointer', fontFamily: 'var(--font-sans)', fontWeight: 500,
     transition: 'color 0.2s',
     padding: '0.25rem 0',
   },
@@ -189,14 +189,14 @@ const s = {
     borderBottom: '1px solid #F5EFE8',
   },
   name: {
-    fontFamily: '"DM Serif Display", Georgia, serif',
+    fontFamily: 'var(--font-serif)',
     fontSize: '1.8rem', fontWeight: 400,  /* lighter — serif doesn't need bold */
     color: '#3D3228', lineHeight: 1.2, marginBottom: '0.4rem',
   },
   title: { fontSize: '0.95rem', color: '#9A8570', marginTop: '0.4rem', fontStyle: 'italic' },
   section: { marginBottom: '2rem' },
   sectionTitle: {
-    fontFamily: '"DM Serif Display", Georgia, serif',
+    fontFamily: 'var(--font-serif)',
     fontSize: '1.35rem', fontWeight: 400,   /* 400, not 600 — consistent with app */
     color: '#3D3228', marginBottom: '1rem',
   },

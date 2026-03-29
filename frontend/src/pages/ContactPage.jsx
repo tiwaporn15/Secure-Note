@@ -187,7 +187,7 @@ const s = {
   },
   brand: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
   brandName: {
-    fontFamily: '"DM Serif Display", Georgia, serif',
+    fontFamily: 'var(--font-serif)',
     fontSize: '1.15rem', fontWeight: 500,
     color: '#2D251F', letterSpacing: '0.02em',
   },
@@ -195,7 +195,7 @@ const s = {
   navLink: {
     background: 'none', border: 'none',
     fontSize: '0.9rem', color: '#9A8970',
-    cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500,
+    cursor: 'pointer', fontFamily: 'var(--font-sans)', fontWeight: 500,
     transition: 'color 0.2s', padding: '0.25rem 0',
   },
   navLinkActive: {
@@ -218,7 +218,7 @@ const s = {
     borderBottom: '1px solid #F5EFE8',
   },
   title: {
-    fontFamily: '"DM Serif Display", Georgia, serif',
+    fontFamily: 'var(--font-serif)',
     fontSize: '2rem', fontWeight: 400,   /* lighter */
     color: '#3D3228', marginBottom: '0.5rem',
   },
@@ -240,7 +240,7 @@ const s = {
     color: '#B8956A',
   },
   contactTitle: {
-    fontFamily: '"DM Serif Display", Georgia, serif',
+    fontFamily: 'var(--font-serif)',
     fontSize: '1.05rem', fontWeight: 400,
     color: '#3D3228', marginBottom: '0.25rem',
   },
@@ -253,7 +253,7 @@ const s = {
   contactValue: { fontSize: '0.875rem', color: '#3D3228', fontWeight: 500 },
   section: { marginBottom: '2.5rem' },
   sectionTitle: {
-    fontFamily: '"DM Serif Display", Georgia, serif',
+    fontFamily: 'var(--font-serif)',
     fontSize: '1.35rem', fontWeight: 400,
     color: '#3D3228', marginBottom: '1.25rem',
     textAlign: 'center',
@@ -285,7 +285,7 @@ const s = {
     border: '1.5px solid #E2D9CC',
     borderRadius: 8,
     fontSize: '0.9rem',
-    fontFamily: '"DM Sans", inherit',
+    fontFamily: 'var(--font-sans)',
     color: '#1C1A19',
     outline: 'none',
     transition: 'border-color 0.2s, box-shadow 0.2s',
@@ -296,7 +296,7 @@ const s = {
     border: '1.5px solid #E2D9CC',
     borderRadius: 8,
     fontSize: '0.9rem',
-    fontFamily: '"DM Sans", inherit',
+    fontFamily: 'var(--font-sans)',
     color: '#1C1A19',
     outline: 'none',
     resize: 'vertical',
@@ -309,7 +309,7 @@ const s = {
     background: '#B8956A', color: 'white',
     border: 'none', borderRadius: 8,
     fontSize: '0.9rem', fontWeight: 600,
-    fontFamily: 'inherit',
+    fontFamily: 'var(--font-sans)',
     cursor: 'pointer',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     boxShadow: '0 4px 14px rgba(184,149,106,0.35)',   /* was missing */
