@@ -48,10 +48,10 @@ export default function ContactPage({ onNavigate }) {
             <HeartIcon size={18} />
             <span style={s.brandName}>SecureNote</span>
           </div>
-          <div className="nav-right" style={s.navRight}>
+          <div style={s.navRight}>
             <button onClick={() => onNavigate('home')} style={s.navLink}>Home</button>
             <button onClick={() => onNavigate('about')} style={s.navLink}>About</button>
-            <button onClick={() => onNavigate('contact')} style={{ ...s.navLink, fontWeight: 600, color: '#F6C697' }}>Contact</button>
+            <button onClick={() => onNavigate('contact')} style={{ ...s.navLink, ...s.navLinkActive }}>Contact</button>
           </div>
         </div>
       </header>
@@ -170,15 +170,15 @@ export default function ContactPage({ onNavigate }) {
 const s = {
   root: {
     minHeight: '100vh',
-    background: '#FEFBF7',
-    fontFamily: 'var(--font-sans)',
+    background: '#FAF8F3',
+    fontFamily: '"DM Sans", system-ui, sans-serif',
   },
   nav: {
     position: 'sticky', top: 0, zIndex: 50,
     background: 'rgba(255,255,255,0.93)',
     backdropFilter: 'blur(14px)',
-    borderBottom: '1px solid rgba(170,140,100,0.2)',
-    boxShadow: '0 1px 12px rgba(45,37,31,0.04)',
+    borderBottom: '1px solid rgba(139,111,71,0.2)',
+    boxShadow: '0 1px 12px rgba(107,88,56,0.05)',
   },
   navInner: {
     maxWidth: 1100, margin: '0 auto', padding: '0 1.5rem',
@@ -186,18 +186,21 @@ const s = {
     gap: '1rem',
   },
   brand: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
-  star: { fontSize: '1.2rem' },
   brandName: {
-    fontFamily: 'var(--font-serif)',
-    fontSize: '1.15rem', fontWeight: 600,
+    fontFamily: '"DM Serif Display", Georgia, serif',
+    fontSize: '1.15rem', fontWeight: 500,
     color: '#2D251F', letterSpacing: '0.02em',
   },
   navRight: { display: 'flex', alignItems: 'center', gap: '2rem' },
-  navLink: { 
-    background: 'none', border: 'none', 
-    fontSize: '0.95rem', color: '#9A8970',
-    cursor: 'pointer', transition: 'color 0.2s', fontFamily: 'var(--font-sans)',
-    fontWeight: 500,
+  navLink: {
+    background: 'none', border: 'none',
+    fontSize: '0.9rem', color: '#9A8970',
+    cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500,
+    transition: 'color 0.2s', padding: '0.25rem 0',
+  },
+  navLinkActive: {
+    color: '#8B6F47',
+    borderBottom: '2px solid #B8956A',
   },
   main: { padding: '3rem 1.5rem' },
   container: { maxWidth: 1000, margin: '0 auto' },
@@ -206,7 +209,7 @@ const s = {
     border: '1px solid rgba(170,140,100,0.2)',
     borderRadius: 16,
     padding: '2.5rem',
-    boxShadow: '0 4px 20px rgba(45,37,31,0.07)',
+    boxShadow: '0 4px 20px rgba(107,88,56,0.07)',
   },
   header: {
     textAlign: 'center',
@@ -215,91 +218,101 @@ const s = {
     borderBottom: '1px solid #F5EFE8',
   },
   title: {
-    fontFamily: 'var(--font-serif)',
-    fontSize: '2.2rem', fontWeight: 700,
+    fontFamily: '"DM Serif Display", Georgia, serif',
+    fontSize: '2rem', fontWeight: 400,   /* lighter */
     color: '#3D3228', marginBottom: '0.5rem',
   },
-  subtitle: { fontSize: '1rem', color: '#9A8570', lineHeight: 1.6 },
+  subtitle: { fontSize: '0.95rem', color: '#9A8570', lineHeight: 1.6 },
   contactGrid: {
     display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-    gap: '1.5rem', marginBottom: '2.5rem',
+    gap: '1.25rem', marginBottom: '2.5rem',
   },
   contactCard: {
-    background: '#F5EDE2',
-    padding: '1.5rem',
+    background: '#FAF8F3',
+    padding: '1.35rem',
     borderRadius: 12,
-    border: '1px solid #E0D5C8',
+    border: '1px solid #EDE5DB',
     textAlign: 'center',
   },
-  contactIcon: { 
+  contactIcon: {
     display: 'flex', justifyContent: 'center', alignItems: 'center',
-    marginBottom: '0.5rem', 
+    marginBottom: '0.5rem',
     color: '#B8956A',
   },
   contactTitle: {
-    fontFamily: 'var(--font-serif)',
-    fontSize: '1.1rem', fontWeight: 600,
+    fontFamily: '"DM Serif Display", Georgia, serif',
+    fontSize: '1.05rem', fontWeight: 400,
     color: '#3D3228', marginBottom: '0.25rem',
   },
-  contactSub: { fontSize: '0.8rem', color: '#9A8570', marginBottom: '0.75rem' },
+  contactSub: { fontSize: '0.8rem', color: '#9A8570', marginBottom: '0.65rem' },
   contactLink: {
     display: 'inline-block',
     color: '#B8956A', textDecoration: 'none',
-    fontWeight: 600, fontSize: '0.95rem',
-    transition: 'color 0.2s',
+    fontWeight: 600, fontSize: '0.9rem',
   },
-  contactValue: { fontSize: '0.9rem', color: '#3D3228', fontWeight: 500 },
+  contactValue: { fontSize: '0.875rem', color: '#3D3228', fontWeight: 500 },
   section: { marginBottom: '2.5rem' },
   sectionTitle: {
-    fontFamily: 'var(--font-serif)',
-    fontSize: '1.4rem', fontWeight: 600,
+    fontFamily: '"DM Serif Display", Georgia, serif',
+    fontSize: '1.35rem', fontWeight: 400,
     color: '#3D3228', marginBottom: '1.25rem',
     textAlign: 'center',
   },
-  socialLinks: {
-    display: 'flex', justifyContent: 'center', gap: '1rem',
-  },
+  socialLinks: { display: 'flex', justifyContent: 'center', gap: '0.85rem' },
+  /* Rounded-rect to match app's button language, not circle */
   socialBtn: {
-    width: '50px', height: '50px',
+    width: 46, height: 46,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     background: '#B8956A', color: 'white',
-    borderRadius: '50%', textDecoration: 'none',
-    fontSize: '1.2rem', transition: 'transform 0.2s, background 0.2s',
-    fontWeight: 600,
+    borderRadius: 10,              /* matches app buttons */
+    textDecoration: 'none',
+    fontSize: '1.1rem', fontWeight: 600,
+    transition: 'transform 0.15s, box-shadow 0.15s',
+    boxShadow: '0 3px 10px rgba(184,149,106,0.3)',
   },
-  messageSection: { 
-    borderTop: '1px solid #EDE4D6', 
+  messageSection: {
+    borderTop: '1px solid #EDE4D6',
     paddingTop: '2rem',
   },
   form: {
-    display: 'flex', flexDirection: 'column', gap: '1rem',
+    display: 'flex', flexDirection: 'column', gap: '0.85rem',
     maxWidth: 600, margin: '0 auto',
   },
+  /* Cream background + warm focus ring — consistent with all other inputs */
   input: {
-    padding: '0.85rem 1rem',
-    border: '1.5px solid #E0D5C8',
+    padding: '0.8rem 1rem',
+    background: '#FAF8F3',
+    border: '1.5px solid #E2D9CC',
     borderRadius: 8,
-    fontSize: '0.95rem',
-    fontFamily: 'var(--font-sans)',
+    fontSize: '0.9rem',
+    fontFamily: '"DM Sans", inherit',
+    color: '#1C1A19',
     outline: 'none',
-    transition: 'border-color 0.2s',
+    transition: 'border-color 0.2s, box-shadow 0.2s',
   },
   textarea: {
-    padding: '0.85rem 1rem',
-    border: '1.5px solid #E0D5C8',
+    padding: '0.8rem 1rem',
+    background: '#FAF8F3',
+    border: '1.5px solid #E2D9CC',
     borderRadius: 8,
-    fontSize: '0.95rem',
-    fontFamily: 'var(--font-sans)',
+    fontSize: '0.9rem',
+    fontFamily: '"DM Sans", inherit',
+    color: '#1C1A19',
     outline: 'none',
     resize: 'vertical',
-    transition: 'border-color 0.2s',
+    transition: 'border-color 0.2s, box-shadow 0.2s',
+    lineHeight: 1.65,
   },
+  /* Submit button matches all other primary buttons */
   submitBtn: {
-    padding: '0.9rem 1.5rem',
+    padding: '0.85rem 1.5rem',
     background: '#B8956A', color: 'white',
     border: 'none', borderRadius: 8,
-    fontSize: '0.95rem', fontWeight: 600,
+    fontSize: '0.9rem', fontWeight: 600,
+    fontFamily: 'inherit',
     cursor: 'pointer',
-    transition: 'background 0.2s',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    boxShadow: '0 4px 14px rgba(184,149,106,0.35)',   /* was missing */
+    transition: 'transform 0.15s, box-shadow 0.15s',
   },
 }
