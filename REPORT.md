@@ -84,6 +84,7 @@
 - Vite bundler (ESM-native, 15-30x faster than Webpack)
 - Inline CSS-in-JS for component styling
 - CSS Variables for consistent theming
+- Tailwind used strictly for off-repo prototyping of marketing/login layouts; final build relies on custom CSS tokens
 - Deployed on Vercel: https://secure-note-66010309.vercel.app
 
 **Backend Stack:**
@@ -211,6 +212,10 @@ const submitDisabled = loading || !isFormValid
 | Unused code | 50+ lines | 0 | 100% removed |
 | Callback stability | Unstable | Memoized | 100% optimized |
 | Style properties | 35 | 20 | 43% removed |
+
+### Tailwind CSS Workflow (Design-Only)
+
+The published repository does **not** depend on Tailwind CSS; there is no `tailwind.config.js`, CLI invocation, or runtime styles from the framework. Instead, Tailwind served as a rapid prototyping tool in a separate sandbox while refining the Contact and Login layouts. After confirming the spacing, typography, and responsive breakpoints with utilities such as `md:flex`, `gap-6`, or `text-[length]`, those styles were copied into the handcrafted CSS tokens (`src/index.css`) and inline style objects that ship in this repo. To repeat the process, experiment inside Tailwind Play or a throwaway Vite+Tailwind project, export the compiled CSS, and paste the resulting declarations back into the React components here—no additional dependencies required.
 
 ---
 
