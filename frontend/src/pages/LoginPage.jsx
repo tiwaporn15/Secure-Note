@@ -152,11 +152,12 @@ const styles = `
   .sn-toggle-pw {
     position: absolute; right: 14px;
     background: none; border: none; cursor: pointer;
-    color: #bbb; padding: 0;
+    color: var(--tan); padding: 0;
     display: flex; align-items: center;
     transition: color 0.2s;
   }
-  .sn-toggle-pw:hover { color: var(--tan); }
+  .sn-toggle-pw:hover { color: var(--tan-hover); }
+  .sn-toggle-pw:active { color: var(--text-dark); }
 
   /* BUTTON */
   .sn-btn {
@@ -287,6 +288,8 @@ export default function LoginPage({ onLogin, onNavigate }) {
   const [showPw, setShowPw] = useState(false)
   const [status, setStatus] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [isSignUp, setIsSignUp] = useState(false)
   const pageBackgroundStyle = {
     backgroundImage: `url(${loginBackground})`,
     backgroundSize: 'cover',
@@ -305,6 +308,14 @@ export default function LoginPage({ onLogin, onNavigate }) {
     onNavigate?.(target)
   }
 
+  const toggleMode = () => {
+    setIsSignUp((prev) => !prev)
+    setStatus(null)
+    setPassword('')
+    setConfirmPassword('')
+    setShowPw(false)
+  }
+
   const handleDemoFill = (event) => {
     event.preventDefault()
     setUsername('admin')
@@ -312,11 +323,21 @@ export default function LoginPage({ onLogin, onNavigate }) {
     setStatus({ type: 'info', message: 'เติมบัญชีเดโม่ admin / admin123 ให้แล้วค่ะ' })
   }
 
-  const handleLogin = async (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
 
-    if (!username.trim() || !password) {
-      setStatus({ type: 'error', message: 'กรุณากรอก Username และ Password ให้ครบค่ะ' })
+    const trimmedUsername = username.trim()
+
+    if (!trimmedUsername || !password || (isSignUp && !confirmPassword)) {
+      const message = isSignUp
+        ? 'กรุณากรอก Username, Password และยืนยันรหัสผ่านให้ครบค่ะ'
+        : 'กรุณากรอก Username และ Password ให้ครบค่ะ'
+      setStatus({ type: 'error', message })
+      return
+    }
+
+    if (isSignUp && password !== confirmPassword) {
+      setStatus({ type: 'error', message: 'รหัสผ่านทั้งสองช่องไม่ตรงกันค่ะ' })
       return
     }
 
@@ -324,21 +345,34 @@ export default function LoginPage({ onLogin, onNavigate }) {
     setStatus(null)
 
     try {
-      const res = await fetch(`${API_BASE}/login`, {
+      const endpoint = isSignUp ? 'register' : 'login'
+      const res = await fetch(`${API_BASE}/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ username: username.trim(), password }),
+        body: JSON.stringify({ username: trimmedUsername, password }),
       })
 
       const data = await res.json().catch(() => ({}))
 
       if (!res.ok) {
-        throw new Error(data.message || 'ไม่สามารถเข้าสู่ระบบได้ในขณะนี้')
+        const fallback = isSignUp ? 'ไม่สามารถสมัครบัญชีได้ในขณะนี้' : 'ไม่สามารถเข้าสู่ระบบได้ในขณะนี้'
+        throw new Error(data.message || fallback)
       }
 
-      setStatus({ type: 'success', message: 'เข้าสู่ระบบสำเร็จ กำลังพาไปยังหน้าบันทึกค่ะ' })
-      onLogin?.(data.username || username.trim())
+      if (isSignUp) {
+        setStatus({
+          type: 'success',
+          message: data.message || 'สร้างบัญชีสำเร็จแล้วค่ะ ลองเข้าสู่ระบบได้เลย',
+        })
+        setIsSignUp(false)
+        setConfirmPassword('')
+        setPassword('')
+        setShowPw(false)
+      } else {
+        setStatus({ type: 'success', message: 'เข้าสู่ระบบสำเร็จ กำลังพาไปยังหน้าบันทึกค่ะ' })
+        onLogin?.(data.username || trimmedUsername)
+      }
     } catch (err) {
       const friendly = err.message.includes('Failed to fetch')
         ? 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่อีกครั้ง'
@@ -389,7 +423,7 @@ export default function LoginPage({ onLogin, onNavigate }) {
               </div>
             )}
 
-            <form onSubmit={handleLogin}>
+            <form onSubmit={handleSubmit}>
               {/* Username */}
               <div className="sn-field">
                 <label className="sn-label" htmlFor="sn-username">Username</label>
@@ -420,7 +454,7 @@ export default function LoginPage({ onLogin, onNavigate }) {
                     placeholder="Enter password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    autoComplete="current-password"
+                    autoComplete={isSignUp ? 'new-password' : 'current-password'}
                     disabled={loading}
                   />
                   <button
@@ -434,24 +468,61 @@ export default function LoginPage({ onLogin, onNavigate }) {
                 </div>
               </div>
 
-              <div className="sn-helper-row">
-                <button type="button" onClick={handleNav('contact')}>
-                  ลืมรหัสผ่าน?
-                </button>
-                <button type="button" onClick={handleDemoFill}>
-                  ใช้บัญชีเดโม่
-                </button>
-              </div>
+              {isSignUp && (
+                <div className="sn-field">
+                  <label className="sn-label" htmlFor="sn-confirm-password">Confirm Password</label>
+                  <div className="sn-input-wrap">
+                    <span className="sn-input-icon"><IconLock /></span>
+                    <input
+                      id="sn-confirm-password"
+                      className="sn-input"
+                      type={showPw ? 'text' : 'password'}
+                      placeholder="Confirm password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      autoComplete="new-password"
+                      disabled={loading}
+                    />
+                    <button
+                      className="sn-toggle-pw"
+                      onClick={() => setShowPw((p) => !p)}
+                      type="button"
+                      aria-label={showPw ? 'Hide password' : 'Show password'}
+                    >
+                      {showPw ? <IconEyeOff /> : <IconEye />}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {!isSignUp && (
+                <div className="sn-helper-row">
+                  <button type="button" onClick={handleNav('contact')}>
+                    ลืมรหัสผ่าน?
+                  </button>
+                  <button type="button" onClick={handleDemoFill}>
+                    ใช้บัญชีเดโม่
+                  </button>
+                </div>
+              )}
 
               <button className="sn-btn" type="submit" disabled={loading}>
-                {loading ? 'กำลังเข้าสู่ระบบ…' : 'Log In'}
+                {loading
+                  ? (isSignUp ? 'กำลังสมัคร…' : 'กำลังเข้าสู่ระบบ…')
+                  : (isSignUp ? 'Sign Up' : 'Log In')}
               </button>
             </form>
 
             <p className="sn-signup">
-              Don't have an account?{' '}
-              <a href="#signup" onClick={handleNav('about')}>
-                Sign up
+              {isSignUp ? 'กลับไปใช้บัญชีเดิม?' : "Don't have an account?"}{' '}
+              <a
+                href="#signup"
+                onClick={(event) => {
+                  event.preventDefault()
+                  toggleMode()
+                }}
+              >
+                {isSignUp ? 'Log In' : 'Sign Up'}
               </a>
             </p>
           </div>
