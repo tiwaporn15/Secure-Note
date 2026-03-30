@@ -912,13 +912,6 @@ from origin 'http://localhost:5173' has been blocked by CORS policy
 
 ---
 
-## License
-
-This project is licensed under the **MIT License** — see LICENSE file for details.
-
-You're free to use, modify, and distribute this project provided you include the license notice.
-
----
 
 **Last Updated:** March 2026  
 **Status:** Production Ready  
