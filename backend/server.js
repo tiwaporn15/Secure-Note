@@ -6,7 +6,7 @@
  *  - This file runs in the NODE.JS RUNTIME (not the browser).
  *  - JavaScript is executed by the V8 engine, but Node provides extra APIs
  *    (file system, HTTP, process.env, etc.) that do NOT exist in the browser.
- *  - Sensitive config (SECRET_TOKEN, POCKETHOST_TOKEN) lives HERE, never on
+ *  - Sensitive config (POCKETHOST_TOKEN) lives HERE, never on
  *    the client, because server code is never served to the browser.
  */
 
