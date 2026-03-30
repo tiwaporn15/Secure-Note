@@ -12,6 +12,7 @@ A modern, full-stack secure notes web application built with **React** (frontend
 - **Cloud Persistence** with PocketHost (survives server restart)
 - **Loading States** with skeleton loaders
 - **Professional Design** — 2 consolidated fonts (Cormorant Garamond + Raleway)
+- **Tailwind-Inspired Workflow** — Marketing/login layouts were first mocked in Tailwind outside the repo, then translated into the custom CSS that ships here
 - **Efficient Code** — Reusable components, optimized rendering
 - **Deployed on Vercel** with HTTPS
 
@@ -130,6 +131,7 @@ secure-note-app/
 | **Vite** | 5.x | Lightning-fast bundler, dev server |
 | **JavaScript (ES6+)** | — | Language, async/await, destructuring |
 | **CSS3** | — | Styling, animations, responsive design |
+| **Tailwind CSS (prototype only)** | — | Used offline to rough-in spacing/typography; final build relies on plain CSS variables, no Tailwind dependency in the repo |
 
 **Key Libraries:**
 - `react` — Component framework
@@ -158,6 +160,16 @@ secure-note-app/
 | **Vercel** | Frontend hosting + serverless backend | Free tier available |
 | **PocketHost** | Cloud database (PocketBase) | Free tier available |
 | **GitHub** | Source control, CI/CD trigger | Free |
+
+### Tailwind CSS Usage (Design-Only)
+
+This repository does **not** ship Tailwind CSS, nor does it include a Tailwind configuration/CLI step in `package.json`. Instead, Tailwind was used temporarily outside the repo to prototype the Contact/Login layouts. After dialing in spacing, breakpoints, and typography, those utility combinations were copied into the handcrafted CSS that now lives in `src/index.css` and the page-level style objects. If you want to repeat that workflow:
+
+1. Spin up a scratch Vite + Tailwind sandbox (or use Tailwind Play) to explore layouts with utility classes.
+2. Once satisfied, export the resulting CSS (or inspect the compiled styles) and port the declarations into this repo’s custom styles.
+3. Because Tailwind is not a runtime dependency here, no build changes are required—the final result remains framework-agnostic CSS.
+
+Following this approach keeps the production bundle lean while still benefiting from Tailwind’s rapid prototyping experience.
 
 ---
 
