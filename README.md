@@ -4,7 +4,7 @@ A modern, full-stack secure notes web application built with **React** (frontend
 
 ## Key Features
 
-- **Token-based Authentication** with duplicate username detection
+- **Session-based Authentication** with HttpOnly cookies and duplicate username detection
 - **Full CRUD Operations** (Create, Read, Update, Delete)
 - **Real-time Search** by title and content
 - **Smart Sorting** — date (newest/oldest) or name (A-Z)
@@ -33,7 +33,6 @@ A modern, full-stack secure notes web application built with **React** (frontend
 9. [Deployment](#deployment)
 10. [Security](#security)
 11. [Troubleshooting](#troubleshooting)
-12. [Contributing](#contributing)
 
 ---
 
@@ -42,10 +41,10 @@ A modern, full-stack secure notes web application built with **React** (frontend
 SecureNote is a demonstration of full-stack web development fundamentals, showcasing:
 
 - **Frontend Architecture:** Component-based React with hooks (useState, useEffect), Virtual DOM, and unidirectional data flow
-- **Backend Architecture:** Express.js API with middleware, authentication, and data validation
-- **Communication:** HTTP/HTTPS with JSON payloads, custom Authorization headers
-- **Deployment:** Containerized serverless functions on Vercel + PocketHost backend
-- **Security:** Environment-based secret management, token authentication, HTTPS in production
+- **Backend Architecture:** Express.js API with middleware, session-based authentication, and data validation
+- **Communication:** HTTP/HTTPS with JSON payloads, HttpOnly session cookies
+- **Deployment:** Vercel frontend + Render backend + PocketHost database
+- **Security:** Environment-based secret management, session cookies, HTTPS in production
 
 The application is designed as both a **functional utility** (actually usable note-taking app) and a **learning resource** (demonstrates core web development concepts).
 
@@ -113,8 +112,8 @@ secure-note-app/
 | File/Folder | Purpose |
 |-------------|---------|
 | `backend/server.js` | API routes, middleware, PocketHost integration |
-| `backend/.env` | Secrets: `SECRET_TOKEN`, `POCKETHOST_TOKEN`, `PORT` |
-| `frontend/App.jsx` | Auth state, page routing, token management |
+| `backend/.env` | Secrets: `POCKETHOST_TOKEN`, `PORT`, `FRONTEND_URL` |
+| `frontend/App.jsx` | Auth state, page routing, session management |
 | `frontend/pages/` | Full-page components (LoginPage, NotesPage) |
 | `frontend/components/` | Reusable UI blocks (NoteCard, ComposePanel) |
 | `vercel.json` | Build & environment variable settings |
@@ -185,17 +184,7 @@ Before you begin, ensure you have:
 
 - **A modern web browser** (Chrome, Firefox, Edge, Safari)
 
-### Optional but Recommended
 
-- **Vercel CLI** — For local production testing
-  ```bash
-  npm install -g vercel
-  ```
-
-- **Postman or Thunder Client** — For API testing
-  Download: [postman.com](https://www.postman.com)
-
----
 
 ## Installation and Setup
 
@@ -222,8 +211,8 @@ npm install
 cp .env.example .env
 # OR manually create .env with content below:
 # PORT=3001
-# SECRET_TOKEN=your-secret-password-here
-# POCKETHOST_TOKEN=your-pocketbase-token-here
+# POCKETHOST_TOKEN=pb_your_token_here
+# FRONTEND_URL=https://secure-note-66010309.vercel.app
 
 # 3. Edit .env with your actual secrets
 # (Use a text editor, NEVER commit this file)
@@ -265,8 +254,8 @@ npm run dev
 ### Step 4: Test the Application
 
 1. **Open browser** → http://localhost:5173
-2. **Login page appears** → Enter the password from `backend/.env` (value of `SECRET_TOKEN`)
-3. **Click Login** → Token is validated, redirected to NotesPage
+2. **Login page appears** → Create an account or log in with existing credentials
+3. **Click Login** → Session is created, redirected to NotesPage
 4. **Create a note** → Title + Content → Click Save
 5. **Note appears** → In grid above the form
 6. **Delete a note** → Click delete button, confirm
@@ -355,58 +344,124 @@ npm list
 
 ### Authentication
 
-All endpoints (except `GET /api/notes`) require an `Authorization` header:
+All endpoints require a valid session cookie (set automatically during login):
 
 ```http
-Authorization: <SECRET_TOKEN>
+Cookie: sessionId=session_1234567890_abc123
 ```
 
-Example with curl:
+Example with curl (preserves cookies):
 ```bash
-curl -H "Authorization: SecureNote-S3cr3t-K3y-2025" https://securenote-backend.onrender.com/api/notes
+curl -b cookies.txt -c cookies.txt https://securenote-backend.onrender.com/api/notes
 ```
 
 ### Endpoints
 
-#### 1. **POST /api/auth** — Login
-Validate password and receive token.
+#### 1. **POST /api/register** — Create Account
+Create a new user account.
 
 **Request:**
 ```http
-POST /api/auth HTTP/1.1
+POST /api/register HTTP/1.1
 Host: securenote-backend.onrender.com
 Content-Type: application/json
 
 {
-  "password": "SecureNote-S3cr3t-K3y-2025"
+  "username": "alice",
+  "password": "MySecurePassword123"
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "message": "Account created successfully!",
+  "username": "alice"
+}
+```
+
+**Response (409 Conflict):**
+```json
+{
+  "error": "Username already exists"
+}
+```
+
+---
+
+#### 2. **POST /api/login** — Login & Create Session
+Authenticate with username/password and receive a session cookie.
+
+**Request:**
+```http
+POST /api/login HTTP/1.1
+Host: securenote-backend.onrender.com
+Content-Type: application/json
+
+{
+  "username": "alice",
+  "password": "MySecurePassword123"
 }
 ```
 
 **Response (200 OK):**
 ```json
 {
-  "token": "SecureNote-S3cr3t-K3y-2025"
+  "message": "Login successful",
+  "username": "alice"
+}
+```
+
+Sets HttpOnly cookie: `sessionId=session_173...` automatically.
+
+**Response (401 Unauthorized):**
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid username or password"
+}
+```
+
+**Use Case:** Frontend calls during login; browser automatically stores cookie.
+
+---
+
+#### 3. **GET /api/me** — Restore Session
+Check if user has an active session (called on page refresh).
+
+**Request:**
+```http
+GET /api/me HTTP/1.1
+Host: securenote-backend.onrender.com
+Cookie: sessionId=session_173...
+```
+
+**Response (200 OK):**
+```json
+{
+  "username": "alice"
 }
 ```
 
 **Response (401 Unauthorized):**
 ```json
 {
-  "error": "Invalid password"
+  "error": "Not authenticated"
 }
 ```
 
-**Use Case:** Frontend calls this during login, stores token in state.
+**Use Case:** Frontend calls on App mount to restore login state.
 
 ---
 
-#### 2. **GET /api/notes** — List All Notes
-Retrieve all notes from the database.
+#### 4. **GET /api/notes** — List All Notes
+Retrieve all notes (requires session).
 
 **Request:**
 ```http
 GET /api/notes HTTP/1.1
 Host: securenote-backend.onrender.com
+Cookie: sessionId=session_173...
 ```
 
 **Response (200 OK):**
@@ -417,31 +472,21 @@ Host: securenote-backend.onrender.com
     "title": "Shopping List",
     "content": "Milk, eggs, bread...",
     "created": "2026-03-29T10:00:00Z"
-  },
-  {
-    "id": "note_002",
-    "title": "Meeting Notes",
-    "content": "Discussed Q2 roadmap...",
-    "created": "2026-03-29T11:00:00Z"
   }
 ]
 ```
 
-**No authentication required** for reading (public notes).
-
-**Use Case:** Frontend calls on page load to populate notes grid.
-
 ---
 
-#### 3. **POST /api/notes** — Create Note
-Create a new note (requires authentication).
+#### 5. **POST /api/notes** — Create Note
+Create a new note (requires session).
 
 **Request:**
 ```http
 POST /api/notes HTTP/1.1
 Host: securenote-backend.onrender.com
 Content-Type: application/json
-Authorization: SecureNote-S3cr3t-K3y-2025
+Cookie: sessionId=session_173...
 
 {
   "title": "New Note",
@@ -452,40 +497,24 @@ Authorization: SecureNote-S3cr3t-K3y-2025
 **Response (201 Created):**
 ```json
 {
-  "id": "note_new_id",
+  "id": "note_abc123",
   "title": "New Note",
   "content": "This is the note content.",
   "created": "2026-03-29T12:00:00Z"
 }
 ```
 
-**Response (401 Unauthorized):**
-```json
-{
-  "error": "Unauthorized"
-}
-```
-
-**Response (400 Bad Request):**
-```json
-{
-  "error": "Title is required"
-}
-```
-
-**Use Case:** Frontend calls on "Save" button click in ComposePanel.
-
 ---
 
-#### 4. **PATCH /api/notes/:id** — Update Note
-Update an existing note (requires authentication).
+#### 6. **PATCH /api/notes/:id** — Update Note
+Update an existing note (requires session).
 
 **Request:**
 ```http
 PATCH /api/notes/note_001 HTTP/1.1
 Host: securenote-backend.onrender.com
 Content-Type: application/json
-Authorization: SecureNote-S3cr3t-K3y-2025
+Cookie: sessionId=session_173...
 
 {
   "title": "Updated Title",
@@ -503,32 +532,16 @@ Authorization: SecureNote-S3cr3t-K3y-2025
 }
 ```
 
-**Response (401 Unauthorized):**
-```json
-{
-  "error": "Unauthorized"
-}
-```
-
-**Response (404 Not Found):**
-```json
-{
-  "error": "Note not found"
-}
-```
-
-**Use Case:** Frontend calls when user submits changes in EditModal.
-
 ---
 
-#### 5. **DELETE /api/notes/:id** — Delete Note
-Delete a note by ID (requires authentication).
+#### 7. **DELETE /api/notes/:id** — Delete Note
+Delete a note by ID (requires session).
 
 **Request:**
 ```http
 DELETE /api/notes/note_001 HTTP/1.1
 Host: securenote-backend.onrender.com
-Authorization: SecureNote-S3cr3t-K3y-2025
+Cookie: sessionId=session_173...
 ```
 
 **Response (200 OK):**
@@ -538,50 +551,65 @@ Authorization: SecureNote-S3cr3t-K3y-2025
 }
 ```
 
-**Response (401 Unauthorized):**
+---
+
+#### 8. **POST /api/logout** — End Session
+Clear the session cookie.
+
+**Request:**
+```http
+POST /api/logout HTTP/1.1
+Host: securenote-backend.onrender.com
+Cookie: sessionId=session_173...
+```
+
+**Response (200 OK):**
 ```json
 {
-  "error": "Unauthorized"
+  "message": "Logged out successfully"
 }
 ```
 
-**Response (404 Not Found):**
-```json
-{
-  "error": "Note not found"
-}
-```
-
-**Use Case:** Frontend calls when user clicks delete button on a NoteCard.
+Clears cookie automatically.
 
 ---
 
 ### Testing the API with cURL
 
 ```bash
-# 1. Login
-curl -X POST http://localhost:3001/api/auth \
+# 1. Register
+curl -X POST http://localhost:3001/api/register \
   -H "Content-Type: application/json" \
-  -d '{"password":"SecureNote-S3cr3t-K3y-2025"}'
+  -d '{"username":"alice","password":"MySecurePassword123"}'
 
-# 2. Get all notes
-curl http://localhost:3001/api/notes
+# 2. Login (save cookies)
+curl -X POST http://localhost:3001/api/login \
+  -H "Content-Type: application/json" \
+  -c cookies.txt \
+  -d '{"username":"alice","password":"MySecurePassword123"}'
 
-# 3. Create a note (requires token)
+# 3. Get all notes (use saved cookies)
+curl http://localhost:3001/api/notes -b cookies.txt
+
+# 4. Create a note (requires session)
 curl -X POST http://localhost:3001/api/notes \
   -H "Content-Type: application/json" \
-  -H "Authorization: SecureNote-S3cr3t-K3y-2025" \
+  -b cookies.txt \
   -d '{"title":"Test Note","content":"Testing..."}'
 
-# 4. Update a note (requires token)
+# 5. Update a note
 curl -X PATCH http://localhost:3001/api/notes/note_id_here \
   -H "Content-Type: application/json" \
-  -H "Authorization: SecureNote-S3cr3t-K3y-2025" \
-  -d '{"title":"Updated Title","content":"Updated content..."}'
+  -b cookies.txt \
+  -d '{"title":"Updated Title"}'
 
-# 5. Delete a note
+# 6. Delete a note
 curl -X DELETE http://localhost:3001/api/notes/note_id_here \
-  -H "Authorization: SecureNote-S3cr3t-K3y-2025"
+  -b cookies.txt
+
+# 7. Logout
+curl -X POST http://localhost:3001/api/logout \
+  -b cookies.txt
 ```
 
 ### Testing with Postman
@@ -591,7 +619,7 @@ curl -X DELETE http://localhost:3001/api/notes/note_id_here \
 3. **Set URL** to `http://localhost:3001/api/notes`
 4. **Add headers:** 
    - `Content-Type: application/json`
-   - `Authorization: SecureNote-S3cr3t-K3y-2025` (if needed)
+   - Add session cookie (use Cookies tab in Postman after login)
 5. **Add body** (for POST): `{"title":"...","content":"..."}`
 6. **Send** → See response
 
@@ -607,12 +635,11 @@ Create a `backend/.env` file with these variables:
 # Server Configuration
 PORT=3001
 
-# Authentication Secret (used for login)
-SECRET_TOKEN=SecureNote-S3cr3t-K3y-2025
+# PocketHost API Token
+POCKETHOST_TOKEN=pb_XXXXXXXXXXXXXXXXXXXX
 
-# PocketHost Configuration
-POCKETHOST_URL=https://your-instance.pockethost.io
-POCKETHOST_TOKEN=your-pockethost-api-token-here
+# Frontend URL (for CORS)
+FRONTEND_URL=https://secure-note-66010309.vercel.app
 ```
 
 ### Explanation
@@ -620,8 +647,8 @@ POCKETHOST_TOKEN=your-pockethost-api-token-here
 | Variable | Purpose | Example | Security |
 |----------|---------|---------|----------|
 | `PORT` | Which port the Express server listens on | `3001` | Public (shown in README) |
-| `SECRET_TOKEN` | Password for authentication | `MySecureP@ssw0rd` | **Keep SECRET** |
-| `POCKETHOST_TOKEN` | API key for database access | `pb_eyJhbGc...` | **Keep SECRET** |
+| `POCKETHOST_TOKEN` | Bearer token for PocketHost REST API | `pb_XXXXXXXXXXXXXXXXXXXX` | **Keep SECRET** |
+| `FRONTEND_URL` | Deployed frontend origin (for CORS) | `https://secure-note...` | Public but specific |
 
 ### Loading Environment Variables
 
@@ -630,7 +657,7 @@ The `backend/server.js` loads them via `dotenv`:
 require('dotenv').config()  // Loads .env file into process.env
 
 const port = process.env.PORT  // Access in code
-const token = process.env.SECRET_TOKEN
+const token = process.env.POCKETHOST_TOKEN
 const pbToken = process.env.POCKETHOST_TOKEN
 ```
 
@@ -673,9 +700,7 @@ dist/
 
 3. **Set Environment Variables**
    - Vercel Dashboard → Project Settings → Environment Variables
-   - Add:
-     - `SECRET_TOKEN` = your password
-     - `POCKETHOST_TOKEN` = your database token
+   - Add `POCKETHOST_TOKEN` and `FRONTEND_URL`
    - Apply to all environments (Production, Preview, Development)
 
 4. **Deploy**
@@ -714,27 +739,28 @@ vercel dev
 ### Key Principles
 
 1. **Secrets in Environment Variables Only**
-   - Never hardcode SECRET_TOKEN in source code
-   - Always use process.env.SECRET_TOKEN on backend
+   - Never hardcode POCKETHOST_TOKEN in source code
+   - Always use process.env.POCKETHOST_TOKEN on backend
    - Never expose secrets in frontend code
 
 2. **HTTPS in Production**
    - Development: HTTP (localhost is safe)
-   - Production: HTTPS mandatory (encrypts tokens in transit)
+   - Production: HTTPS mandatory (encrypts session cookies in transit)
    - Vercel provides free HTTPS via Let's Encrypt
 
-3. **Token-Based Authentication**
-   - Token stored in frontend React state (session-only)
-   - Token sent in `Authorization` header of every authenticated request
-   - Backend validates token before processing requests
+3. **Session-Based Authentication**
+   - Session cookie (HttpOnly) set by backend on login
+   - Cookie sent automatically with every request
+   - Backend validates session before processing requests
+   - Browser cannot read cookie via JavaScript (XSS protection)
 
 4. **CORS Protection**
    - Development: Vite proxies requests (no CORS issues)
-   - Production: Express sends `Access-Control-Allow-Origin` headers
-   - Restricts requests to your domain only
+   - Production: Express validates FRONTEND_URL origin
+   - Restricts cookie sharing to your domain only
 
 5. **Input Validation**
-   - Backend validates all input (title, content lengths)
+   - Backend validates all input (title, content, username)
    - Prevents invalid/malicious data from being saved
    - Returns 400 Bad Request if validation fails
 
@@ -742,14 +768,9 @@ vercel dev
 
 **Backend Example:**
 ```javascript
-// Middleware: Check Authorization header
-app.post('/api/notes', (req, res) => {
-  const token = req.headers.authorization
-  
-  // Validate token
-  if (token !== process.env.SECRET_TOKEN) {
-    return res.status(401).json({ error: 'Unauthorized' })
-  }
+// Middleware: Check session
+app.post('/api/notes', requireSession, (req, res) => {
+  const user = req.session.username
   
   // Validate input
   const { title, content } = req.body
@@ -817,10 +838,13 @@ Then restart and update frontend proxy settings.
 
 ---
 
-#### **Issue: Login fails with "Invalid password"**
+#### **Issue: Login fails**
 
 **Solution:**
-- Check `backend/.env` has correct `SECRET_TOKEN` value
+- Verify username and password are correct
+- Check backend is running: http://localhost:3001
+- Check network tab in DevTools for 401 response
+- Clear browser cookies and try again
 - Check you're entering the exact same password
 - Verify no extra spaces: `"SecureNote-S3cr3t-K3y-2025"` ← note the hyphens
 - Restart backend server after changing `.env`
@@ -845,10 +869,10 @@ Then restart and update frontend proxy settings.
    - Verify API token is valid
    - Check database has `notes` table
 
-4. **Verify Authorization header:**
-   - DevTools → Network tab
-   - Click the POST request to `/api/notes`
-   - Check "Authorization" header has your token
+4. **Verify session cookie:**
+   - DevTools → Application → Cookies
+   - Check `sessionId` cookie is present
+   - Or: DevTools → Network tab → POST /api/notes → Cookies tab
 
 ---
 
@@ -876,127 +900,6 @@ from origin 'http://localhost:5173' has been blocked by CORS policy
 
 ---
 
-#### **Issue: Component not rendering / blank page**
-
-**Solution:**
-```bash
-# Check browser console for errors (F12)
-
-# Check React version compatibility
-npm list react
-
-# If needed, update React:
-npm update react react-dom
-
-# Clear browser cache: Ctrl+Shift+Delete
-
-# Restart frontend dev server:
-# Press Ctrl+C in terminal, then:
-npm run dev
-```
-
----
-
-#### **Issue: Blank page after login**
-
-**Likely cause:** Frontend not receiving token correctly.
-
-**Solution:**
-1. **Check browser Console (F12):**
-   - Look for JavaScript errors
-   - Check Network tab → `/api/auth` request/response
-
-2. **Verify backend returns token:**
-   ```bash
-   curl -X POST http://localhost:3001/api/auth \
-     -H "Content-Type: application/json" \
-     -d '{"password":"SecureNote-S3cr3t-K3y-2025"}'
-   ```
-   Should return: `{"token":"SecureNote-S3cr3t-K3y-2025"}`
-
-3. **Check App.jsx token state update:**
-   - Ensure `onLogin()` is called with token
-   - Ensure token is stored in state
-
----
-
-### Getting Help
-
-**If issue persists:**
-
-1. **Read the REPORT.md** for architecture details
-2. **Check browser DevTools:**
-   - Console tab for errors
-   - Network tab to view requests/responses
-   - Application tab to see stored data
-
-3. **Read Express/React error messages carefully** — they usually pinpoint the issue
-
-4. **Search Stack Overflow** with your exact error message
-
-5. **Ask in communities:**
-   - Reddit: r/learnprogramming, r/reactjs
-   - Discord: Reactjs, Node.js servers
-   - GitHub Issues (if this is on GitHub)
-
----
-
-## Contributing
-
-### How to Contribute
-
-We welcome contributions! Here's how:
-
-1. **Fork the repository** (create your own copy)
-2. **Create a feature branch:**
-   ```bash
-   git checkout -b feature/amazing-feature
-   ```
-3. **Make your changes** (code, docs, fixes)
-4. **Test thoroughly:**
-   ```bash
-   # Ensure backend runs without errors
-   npm run start
-
-   # Ensure frontend runs without errors
-   npm run dev
-
-   # Test all API endpoints
-   # Test UI changes in browser
-   ```
-5. **Commit with clear messages:**
-   ```bash
-   git commit -m "Add: amazing-feature description"
-   ```
-6. **Push to your fork:**
-   ```bash
-   git push origin feature/amazing-feature
-   ```
-7. **Create a Pull Request** on GitHub
-
-### Contribution Ideas
-
-- 🐛 **Bug fixes:** Find and fix issues
-- 📚 **Documentation:** Improve README, comments, examples
-- ✨ **Features:** Add new functionality
-  - Dark mode toggle
-  - Note categories/tags
-  - Search/filter notes
-  - Note sharing
-- 🎨 **UI/UX:** Improve design, accessibility, animations
-- ⚡ **Performance:** Optimize bundle size, API calls, rendering
-- 🧪 **Testing:** Add unit tests, integration tests
-
-### Code Standards
-
-- **Format:** Use consistent spacing (2 spaces for JS/JSON)
-- **Comments:** Explain "why", not "what" — code should be self-explanatory
-- **Components:** Keep components focused and reusable
-- **Naming:** Use descriptive names for variables, functions, components
-- **Error Handling:** Always handle errors gracefully
-
----
-
 ## License
 
 This project is licensed under the **MIT License** — see LICENSE file for details.
@@ -1005,44 +908,6 @@ You're free to use, modify, and distribute this project provided you include the
 
 ---
 
-## Additional Resources
-
-### Learning Materials
-
-- **React Official Docs:** https://react.dev
-- **Express.js Guide:** https://expressjs.com
-- **MDN Web Docs:** https://developer.mozilla.org
-- **Full-Stack Developer Roadmap:** https://roadmap.sh/full-stack
-- **PocketBase Documentation:** https://pocketbase.io/docs
-
-### Related Projects
-
-- **SecureNote API Docs:** See REPORT.md
-- **Deployment Guide:** See vercel.json configuration
-- **Architecture Details:** See REPORT.md (Component Architecture section)
-
----
-
-## Support
-
-**Have questions?**
-
-- 📩 Email: support@example.com
-- 💬 GitHub Discussions: [link to discussions]
-- 🐛 Report bugs: GitHub Issues
-
----
-
-## Acknowledgments
-
-- **React Team** for the amazing frontend library
-- **Express.js** for the simple, flexible backend framework
-- **PocketBase/PocketHost** for easy cloud database
-- **Vercel** for seamless deployment
-- **Contributors** who improve this project
-
----
-
 **Last Updated:** March 2026  
-**Status:** ✅ Production Ready  
+**Status:** Production Ready  
 **Version:** 1.0.0

@@ -4,7 +4,11 @@
 **Assignment:** Full-Stack "SecureNote" Application  
 **Frontend Path:** B — React.js + Vite  
 **Date:** March 2026  
-**Status:** COMPLETE (100% + Bonus Points)
+**Status:** COMPLETE
+
+**Live Application:** https://secure-note-66010309.vercel.app  
+**Frontend Dashboard:** https://vercel.com/tiwaporn15s-projects/secure-note-66010309  
+**Backend API:** https://securenote-backend.onrender.com
 
 ---
 
@@ -38,24 +42,21 @@
 - Error handling and recovery
 - Git version control with meaningful commits
 - Optimized component code (reusable InputField component)
-- Memoized callbacks to prevent unnecessary re-renders
-
----
 
 ## Table of Contents
 
 1. [Final Implementation Overview](#final-implementation-overview)
 2. [Code Quality & Optimizations](#code-quality--optimizations)
 3. [User Experience Features](#user-experience-features)
-4. [JS Engine vs. Runtime](#js-engine-vs-runtime)
-5. [DOM & Virtual DOM](#dom--how-the-frontend-updates-the-screen-react--virtual-dom)
-6. [HTTP/HTTPS & Request Cycle](#httphttps--the-requestresponse-cycle)
-7. [Environment Variables & Secrets](#environment-variables--why-secret_token-lives-on-the-backend)
-8. [Component Architecture & Data Flow](#component-architecture--data-flow)
-9. [React Hooks & State Management](#react-hooks--state-management-patterns)
-10. [Security & Authentication](#security--authentication-implementation)
-11. [Deployment & DevOps](#deployment--devops-to-vercel)
-12. [Error Handling & Edge Cases](#error-handling--edge-cases)
+4. [DOM & Virtual DOM](#dom--how-the-frontend-updates-the-screen-react--virtual-dom)
+5. [HTTP/HTTPS & Request Cycle](#httphttps--the-requestresponse-cycle)
+6. [Environment Variables — Backend-Only Configuration](#environment-variables--backend-only-configuration)
+7. [Component Architecture & Data Flow](#component-architecture--data-flow)
+8. [React Hooks & State Management](#react-hooks--state-management-patterns)
+9. [Security & Authentication](#security--authentication-implementation)
+10. [Deployment & DevOps](#deployment--devops-to-vercel)
+11. [Error Handling & Edge Cases](#error-handling--edge-cases)
+12. [Enhanced Features & Bonus Implementations](#enhanced-features--bonus-implementations)
 
 ---
 
@@ -65,7 +66,7 @@
 
 **SecureNote** is a full-stack, production-ready notes application featuring:
 
-1. **Authentication System** — Session-based login with token validation
+1. **Authentication System** — Username/password login backed by HttpOnly session cookies
 2. **CRUD Operations** — Complete note management (Create, Read, Update, Delete)
 3. **Search & Filter** — Real-time search across note titles and content
 4. **Sorting** — Multiple sort options (newest/oldest date, alphabetical)
@@ -83,12 +84,14 @@
 - Vite bundler (ESM-native, 15-30x faster than Webpack)
 - Inline CSS-in-JS for component styling
 - CSS Variables for consistent theming
+- Deployed on Vercel: https://secure-note-66010309.vercel.app
 
 **Backend Stack:**
 - Express.js for HTTP routing and middleware
 - PocketHost (PocketBase cloud) for database
 - dotenv for environment variable management
 - CORS middleware for cross-origin requests
+- Deployed on Render: https://securenote-backend.onrender.com
 
 **Deployment:**
 - Vercel for frontend: https://secure-note-66010309.vercel.app
@@ -270,11 +273,7 @@ The submit button dynamically adjusts based on form completeness:
 
 ---
 
-## 1. JS Engine vs. Runtime
-
----
-
-## 2. DOM — How the Frontend Updates the Screen (React / Virtual DOM)
+## 4. DOM — How the Frontend Updates the Screen (React / Virtual DOM)
 
 SecureNote uses **React.js** (Path B), which means the Virtual DOM manages real-DOM updates rather than manual manipulation.
 
@@ -302,10 +301,10 @@ setNotes(prev => [newNote, ...prev])
 
 ```jsx
 // In App.jsx
-const [token, setToken] = useState(null)
+const [username, setUsername] = useState(null)
 
 // When user logs in:
-onLogin(token)  →  setToken(token)
+onLogin(user)  →  setUsername(user)
 // React diffs → LoginPage unmounts, NotesPage mounts — entire page swaps, no navigation
 ```
 
@@ -327,55 +326,53 @@ useEffect(() => { loadNotes() }, [])
 
 ---
 
-## 3. HTTP/HTTPS — The Request/Response Cycle
+## 5. HTTP/HTTPS — The Request/Response Cycle
 
 ### What happens when the user clicks "Save Note"
 
-1. `ComposePanel.jsx` calls `onSave(title, content)` which triggers in `NotesPage.jsx`:
+1. `ComposePanel.jsx` calls `onSave(title, content)` which triggers `handleCreate` inside `NotesPage.jsx`:
 
 ```js
-const res = await fetch('/api/notes', {
+const res = await fetch(`${API_BASE}/notes`, {
   method: 'POST',
-  headers: {
-    'Content-Type':  'application/json',
-    'Authorization': token,        // SECRET_TOKEN in header, never in source
-  },
-  body: JSON.stringify({ title, content }),
+  headers: { 'Content-Type': 'application/json' },
+  credentials: 'include',          // send HttpOnly session cookie
+  body: JSON.stringify({ title, content })
 })
 ```
 
-2. Vite's dev proxy forwards `/api/*` → `http://localhost:3001/api/*` (configured in `vite.config.js`). This avoids CORS issues during development.
+2. During development Vite proxies `/api/*` → `http://localhost:3001/api/*`, so even though the frontend runs on port 5173 there are no CORS preflight issues.
 
-3. The browser constructs an **HTTP/1.1 POST request**:
+3. The browser now sends the session cookie that was minted during `POST /api/login`:
 ```
 POST /api/notes HTTP/1.1
 Host: localhost:3001
 Content-Type: application/json
-Authorization: SecureNote-S3cr3t-K3y-2025
+Cookie: sessionId=session_173...
 
 {"title":"My Note","content":"Hello world"}
 ```
 
-4. Express parses the request. The `requireAuth` middleware reads the `Authorization` header and compares it to `process.env.SECRET_TOKEN`.
+4. Express parses the request, the `requireSession` middleware looks up `sessionId` inside the in-memory `sessions` map, and attaches the logged-in username to `req.session`.
 
-5. If valid, Express sends a second HTTP request to **PocketHost** with the `POCKETHOST_TOKEN` in a `Bearer` Authorization header.
+5. After validation the server forwards the payload to **PocketHost** using the backend-only `POCKETHOST_TOKEN` (still sent via a Bearer header, but never exposed to the browser).
 
-6. PocketHost responds `201 Created` → Express responds `201 Created` → React calls `setNotes(prev => [newNote, ...prev])` → card appears instantly.
+6. PocketHost responds `201 Created`, Express relays the created record, and React calls `setNotes(prev => [newNote, ...prev])` so the UI updates immediately.
 
 ### HTTP Verbs and Status Codes
 
 | Verb   | Endpoint           | Auth Required | Description          |
 |--------|--------------------|---------------|----------------------|
-| GET    | `/api/notes`       | No            | Read all notes       |
-| POST   | `/api/notes`       | Yes           | Create a new note    |
-| DELETE | `/api/notes/:id`   | Yes           | Delete a note by ID  |
+| GET    | `/api/notes`       | Yes (session) | Read all notes       |
+| POST   | `/api/notes`       | Yes (session) | Create a new note    |
+| DELETE | `/api/notes/:id`   | Yes (session) | Delete a note by ID  |
 
 | Status | Meaning       | When returned                       |
 |--------|---------------|-------------------------------------|
 | 200    | OK            | Successful GET or DELETE            |
 | 201    | Created       | Successful POST                     |
 | 400    | Bad Request   | Missing title or content            |
-| 401    | Unauthorized  | Wrong or missing Authorization      |
+| 401    | Unauthorized  | Missing/invalid `sessionId` cookie  |
 | 404    | Not Found     | DELETE with non-existent ID         |
 | 500    | Server Error  | Unexpected server exception         |
 
@@ -383,55 +380,33 @@ Authorization: SecureNote-S3cr3t-K3y-2025
 
 We use **HTTP locally** (unencrypted). In production, HTTPS adds **TLS (Transport Layer Security)**:
 
-- **Encryption:** All data — including the `Authorization` header containing `SECRET_TOKEN` — is encrypted between client and server. Without HTTPS, anyone on the same network can read the token in plain text using a packet sniffer.
+- **Encryption:** All data — including the HttpOnly cookie that carries `sessionId` — is encrypted between client and server. Without HTTPS, anyone on the same network could steal the cookie and impersonate the user.
 - **Integrity:** TLS message authentication codes (MACs) prevent tampering mid-transit.
 - **Authentication:** TLS certificates (signed by Certificate Authorities) verify the server's identity, preventing man-in-the-middle attacks.
 
-Even a "simple" internal tool like SecureNote needs HTTPS in production because leaking the token means anyone can create or delete notes impersonating an authorized user.
+Even a "simple" internal tool like SecureNote needs HTTPS in production because leaking the `sessionId` cookie would let anyone impersonate an authenticated user.
 
 ---
 
-## 4. Environment Variables — Why SECRET_TOKEN Lives on the Backend
+## 6. Environment Variables — Backend-Only Configuration
 
-### The golden rule: secrets never touch the client
-
-`SECRET_TOKEN` and `POCKETHOST_TOKEN` live exclusively in `backend/.env`:
+Only two values need to be injected at runtime now that authentication uses session cookies:
 
 ```dotenv
-SECRET_TOKEN=SecureNote-S3cr3t-K3y-2025
-POCKETHOST_TOKEN=20260301eink
+PORT=3001
+POCKETHOST_TOKEN=pb_XXXXXXXXXXXXXXXXXXXX
+FRONTEND_URL=https://secure-note-66010309.vercel.app
 ```
 
-Loaded into `process.env` by `dotenv` at **server startup**. They are never written into any file the browser downloads.
+- `PORT` allows the service to bind to a custom port when deployed locally or inside Render.
+- `POCKETHOST_TOKEN` is the Bearer token required to talk to the PocketHost REST API. It never appears in the browser because all PocketHost calls originate from `server.js`.
+- `FRONTEND_URL` informs the CORS middleware which origin is allowed to send cookies (`SameSite=None` requires an explicit allow-list).
 
-### What would happen if we put SECRET_TOKEN in React code?
-
-```jsx
-// App.jsx — CATASTROPHICALLY WRONG
-const SECRET_TOKEN = 'SecureNote-S3cr3t-K3y-2025'
-```
-
-Vite **bundles all source files into JavaScript sent to every browser**. Any visitor can:
-1. Open DevTools → Network → view any JS bundle
-2. Search for the token string
-3. Make unlimited authenticated POST/DELETE requests, bypassing all access control
-
-**There is no such thing as a secret in frontend code.** The browser must download it to run it.
-
-### How environment variables keep secrets safe
-
-| Property                | Backend `.env`        | Frontend JSX source |
-|-------------------------|-----------------------|---------------------|
-| Visible to visitors?    | No                    | Yes (DevTools)      |
-| Committed to Git?       | No (.gitignore)       | Yes                 |
-| Exists only in memory?  | Yes (process.env)     | N/A                 |
-| Safe for secrets?       | Yes                   | Never               |
-
-The `.gitignore` ensures `.env` never enters the repository. If a secret appears in Git history — even once, even deleted — it is compromised and must be rotated.
+The backend reads these values through `process.env` immediately after `dotenv.config()`. They are excluded from source control via `.gitignore`, so even if the repository is made public the credentials remain private.
 
 ---
 
-## 5. Component Architecture & Data Flow
+## 7. Component Architecture & Data Flow
 
 ### The Component Hierarchy of SecureNote
 
@@ -439,8 +414,8 @@ The application follows a clear hierarchical structure:
 
 ```
 App.jsx (root, manages auth state)
-├── LoginPage.jsx (child: only shown when token is null)
-├── NotesPage.jsx (child: only shown when token exists)
+├── LoginPage.jsx (child: only shown when username is null)
+├── NotesPage.jsx (child: only shown when username exists)
 │   ├── ComposePanel.jsx (child: input form)
 │   └── NoteCard.jsx (array of children: one per note)
 ├── AboutPage.jsx (info page)
@@ -449,50 +424,74 @@ App.jsx (root, manages auth state)
 
 ### Prop Drilling vs. State Lifting
 
-When the user logs in, the token must flow from `LoginPage` upward to `App`, then downward to `NotesPage`:
+`App.jsx` owns the `username` state. `LoginPage` reports successful auth through `onLogin`, while `NotesPage` receives the username plus a logout callback. Because the backend stores the real session inside an HttpOnly cookie, React only needs to know *who* is logged in — not any secrets.
 
 **In App.jsx (root state):**
 ```jsx
-const [token, setToken] = useState(null)
+const [username, setUsername] = useState(null)
+const [isCheckingSession, setIsCheckingSession] = useState(true)
 
-return (
-  <>
-    {token ? (
-      <NotesPage token={token} onLogout={() => setToken(null)} />
-    ) : (
-      <LoginPage onLogin={(t) => setToken(t)} />
-    )}
-  </>
+useEffect(() => {
+  async function restoreSession() {
+    const res = await fetch(`${API_BASE}/me`, { credentials: 'include' })
+    if (res.ok) {
+      const data = await res.json()
+      setUsername(data.username)
+    }
+    setIsCheckingSession(false)
+  }
+  restoreSession()
+}, [])
+
+if (isCheckingSession) return <SplashScreen />
+
+return username ? (
+  <NotesPage username={username} onLogout={() => setUsername(null)} />
+) : (
+  <LoginPage onLogin={(user) => setUsername(user)} />
 )
 ```
 
-**In NotesPage.jsx (receives token, passes to children):**
+**In NotesPage.jsx (fetches data with HttpOnly cookie):**
 ```jsx
-export default function NotesPage({ token, onLogout }) {
+export default function NotesPage({ username, onLogout }) {
   const [notes, setNotes] = useState([])
-  
+
+  useEffect(() => {
+    fetch(`${API_BASE}/notes`, { credentials: 'include' })
+      .then(res => res.json())
+      .then(setNotes)
+  }, [])
+
+  async function handleCreate(title, content) {
+    const res = await fetch(`${API_BASE}/notes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ title, content }),
+    })
+    setNotes(prev => [await res.json(), ...prev])
+  }
+
+  async function handleLogout() {
+    await fetch(`${API_BASE}/logout`, { method: 'POST', credentials: 'include' })
+    onLogout()
+  }
+
   return (
     <>
       <header>
-        <button onClick={onLogout}>Logout</button>
+        <span>{username}</span>
+        <button onClick={handleLogout}>Logout</button>
       </header>
-      <ComposePanel token={token} onSave={(note) => {
-        setNotes(prev => [note, ...prev])
-      }} />
-      <div className="notes-grid">
-        {notes.map(note => (
-          <NoteCard 
-            key={note.id} 
-            note={note} 
-            token={token}
-            onDelete={(id) => setNotes(prev => prev.filter(n => n.id !== id))}
-          />
-        ))}
-      </div>
+      <ComposePanel onSave={handleCreate} />
+      <NoteGrid notes={notes} />
     </>
   )
 }
 ```
+
+Every request that includes `credentials: 'include'` automatically sends the `sessionId` cookie the backend minted during login. No Authorization header or client-side token storage is required, which removes the risk of leaking shared secrets through DevTools.
 
 This is **prop drilling** — passing props through intermediate components to reach deeply nested children. For SecureNote's small component tree, this is appropriate. In larger apps, Context API or state management libraries (Redux, Zustand) would reduce prop chains.
 
@@ -507,7 +506,7 @@ This is **prop drilling** — passing props through intermediate components to r
 ```jsx
 // In ComposePanel:
 const handleSave = async (title, content) => {
-  const newNote = await createNote(title, content, token)
+  const newNote = await createNote(title, content)
   onSave(newNote)  // Call parent's callback
 }
 ```
@@ -539,7 +538,7 @@ This ensures predictable state changes: **state flows down, actions flow up.**
 
 ---
 
-## 6. React Hooks & State Management Patterns
+## 8. React Hooks & State Management Patterns
 
 ### useState: Managing Component State
 
@@ -604,7 +603,7 @@ useEffect(() => {
 **Dependency array behavior:**
 ```jsx
 // [] = run once after mount (like componentDidMount)
-// [token] = run whenever token changes
+// [username] = run whenever username changes (replace with any dependency)
 // no array = run after EVERY render (dangerous!)
 useEffect(() => { ... }, [])
 
@@ -621,36 +620,38 @@ While SecureNote doesn't define custom hooks currently, a common pattern would b
 
 ```jsx
 // hypothetical useNotes.js
-export function useNotes(token) {
+export function useNotes({ enabled }) {
   const [notes, setNotes] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   
   useEffect(() => {
-    if (!token) return
+    if (!enabled) return
+    let cancelled = false
     
     const load = async () => {
       setLoading(true)
       try {
-        const res = await fetch('/api/notes', {
-          headers: { Authorization: token }
-        })
-        setNotes(await res.json())
+        const res = await fetch('/api/notes', { credentials: 'include' })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const data = await res.json()
+        if (!cancelled) setNotes(data)
       } catch (e) {
-        setError(e)
+        if (!cancelled) setError(e)
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
     
     load()
-  }, [token])
+    return () => { cancelled = true }
+  }, [enabled])
   
   return { notes, loading, error, setNotes }
 }
 
 // Usage in NotesPage:
-const { notes, loading, error, setNotes } = useNotes(token)
+const { notes, loading, error } = useNotes({ enabled: Boolean(username) })
 ```
 
 This extracts data-fetching logic for reuse across components.
@@ -663,283 +664,201 @@ This extracts data-fetching logic for reuse across components.
 
 ---
 
-## 7. Security & Authentication Implementation
+## 9. Security & Authentication Implementation
 
-### Authentication Flow: LoginPage to Backend
+### Authentication Flow: Sign Up → Login → Session Cookie
 
-**Frontend login sequence:**
+Login and registration both happen through `LoginPage.jsx`. The component flips between sign-up and login modes but always sends credentials over HTTPS with cookies enabled:
+
 ```jsx
-// LoginPage.jsx
-const handleLogin = async (e) => {
+async function handleSubmit(e) {
   e.preventDefault()
-  
-  const res = await fetch('/api/auth', {
+  const endpoint = isSignUp ? '/register' : '/login'
+  const res = await fetch(`${API_BASE}${endpoint}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ password })
+    credentials: 'include',            // allow HttpOnly cookie exchange
+    body: JSON.stringify({ username, password }),
+    signal: AbortSignal.timeout(5000),
   })
-  
-  if (!res.ok) {
-    setError('Invalid password')
-    return
-  }
-  
-  const { token } = await res.json()
-  onLogin(token)  // Pass to App, triggers re-render
+
+  if (!res.ok) throw await res.json()
+  if (!isSignUp) onLogin(username.trim())     // App.jsx stores username only
 }
 ```
 
-**Backend validation (server.js):**
+### Server-Side Session Creation (Express)
+
+`server.js` maintains two in-memory maps: `users` and `sessions`. After validating a username/password combo, it mints a random `sessionId` and sets it as an HttpOnly cookie.
+
 ```javascript
-app.post('/api/auth', express.json(), (req, res) => {
-  const { password } = req.body
-  
-  // Client sends plaintext, server verifies against SECRET_TOKEN
-  if (password !== process.env.SECRET_TOKEN) {
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body
+  if (!users.has(username) || users.get(username).password !== password) {
     return res.status(401).json({ error: 'Unauthorized' })
   }
-  
-  // If correct, return the same token for client to store
-  res.json({ token: process.env.SECRET_TOKEN })
+
+  const sessionId = `session_${Date.now()}_${Math.random().toString(36).slice(2)}`
+  sessions.set(sessionId, { username, loginTime: new Date() })
+
+  res.setHeader(
+    'Set-Cookie',
+    'sessionId=' + sessionId + '; Path=/; HttpOnly; SameSite=None; Secure; Max-Age=86400'
+  )
+  return res.json({ message: 'Login successful', username })
 })
 ```
 
-Security Note: This is an oversimplified demo. In production:
-- Passwords should be hashed (bcrypt, Argon2)
-- Implement JWT (JSON Web Tokens) with expiration
-- Use secure HTTP-only cookies instead of localStorage
-- Add rate limiting to prevent brute-force attacks
+Key cookie flags:
+- `HttpOnly` hides the cookie from `document.cookie`, blocking XSS from stealing it.
+- `SameSite=None` + `Secure` allow cross-origin requests (Vercel ↔ Render) but only over HTTPS.
+- `Max-Age=86400` automatically expires sessions after 24 hours.
 
-### Token Storage & Headers
+### Session Middleware Protects Every CRUD Endpoint
 
-**Frontend stores token in state (session-only):**
-```jsx
-const [token, setToken] = useState(null)
-```
+Before any `/api/notes` handler runs, `requireSession` parses the cookie header, ensures the session exists, then attaches it to `req.session`:
 
-Refreshing the page loses the token—users must re-login. Improvements:
-```jsx
-// Persist to localStorage (less secure, survives refresh)
-useEffect(() => {
-  localStorage.setItem('token', token)
-}, [token])
-
-useEffect(() => {
-  const saved = localStorage.getItem('token')
-  if (saved) setToken(saved)
-}, [])
-
-// OR use secure HTTP-only cookies (sent by server, hidden from JS)
-```
-
-**Every authenticated request includes the token:**
-```jsx
-const createNote = async (title, content) => {
-  const res = await fetch('/api/notes', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token  // Custom header
-    },
-    body: JSON.stringify({ title, content })
-  })
-  return res.json()
-}
-```
-
-### Backend Authorization Middleware
-
-**Express middleware to check Authorization header:**
 ```javascript
-const requireAuth = (req, res, next) => {
-  const auth = req.headers.authorization
-  
-  if (auth !== process.env.SECRET_TOKEN) {
-    return res.status(401).json({ error: 'Unauthorized' })
+function parseCookies(header = '') {
+  return header.split(';').reduce((acc, cookie) => {
+    if (!cookie) return acc
+    const [name, ...value] = cookie.split('=')
+    acc[name.trim()] = value.join('=').trim()
+    return acc
+  }, {})
+}
+
+const requireSession = (req, res, next) => {
+  const { sessionId } = parseCookies(req.headers.cookie)
+  if (!sessionId || !sessions.has(sessionId)) {
+    return res.status(401).json({ error: 'Unauthorized', message: 'Please log in first.' })
   }
-  
-  next()  // Call next middleware/route handler
+  req.session = sessions.get(sessionId)
+  next()
 }
 
-// Apply to protected routes
-app.delete('/api/notes/:id', requireAuth, (req, res) => {
-  // Delete logic
-})
+app.get('/api/notes', requireSession, async (req, res) => { /* ... */ })
+app.post('/api/notes', requireSession, async (req, res) => { /* ... */ })
 ```
 
-### CORS (Cross-Origin Resource Sharing)
+Because PocketHost still requires a Bearer token, only the backend sees `POCKETHOST_TOKEN`. The browser never touches it.
 
-**Problem:** Frontend (localhost:5173) requests backend (localhost:3001)
-```
-Prefllight REQUEST (OPTIONS)
-Browser sends: Origin: http://localhost:5173
-Server must respond with: Access-Control-Allow-Origin: http://localhost:5173
-```
+### Restoring & Ending Sessions
 
-**Solution in Vite (dev only):**
-```javascript
-// vite.config.js
-export default {
-  server: {
-    proxy: {
-      '/api': 'http://localhost:3001'  // Proxy through Vite = no CORS needed
-    }
-  }
+- **Restore on refresh:** `App.jsx` calls `GET /api/me` with `credentials: 'include'`. When the cookie is valid, the backend returns `{ username }`, allowing the UI to hydrate immediately without asking the user to log in again.
+- **Logout:** `POST /api/logout` deletes the entry from `sessions`, clears the cookie by setting `Max-Age=0`, and React resets `username` state via `onLogout()`.
+
+```jsx
+async function handleLogout() {
+  await fetch(`${API_BASE}/logout`, { method: 'POST', credentials: 'include' })
+  onLogout()
 }
 ```
 
-**Solution in Express (production):**
+### CORS & Cookie Hardening
+
+Cross-origin cookies only work when both sides agree to share them. The backend locks this down to the deployed frontend origin:
+
 ```javascript
-import cors from 'cors'
 app.use(cors({
-  origin: process.env.FRONTEND_URL,  // e.g., https://notes.example.com
-  credentials: true
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true,
 }))
 ```
 
-### Why Secrets Must Stay on Backend
+Vite's dev proxy still forwards `/api/*` to `http://localhost:3001`, but in production HTTPS + CORS ensures only `https://secure-note-66010309.vercel.app` can send `sessionId` cookies.
 
-**Frontend code is public:**
-```jsx
-// NEVER DO THIS
-const API_KEY = 'secret-xyz'  // Visible in DevTools → Network → JS bundles
-const PASSWORD = 'admin'
-const DATABASE_URL = 'postgresql://...'
-```
+### Future Hardening Checklist
 
-**The build/bundle process doesn't hide secrets:**
-- Vite bundles all `src/**/*` into JavaScript files
-- These files are downloaded by the browser
-- Any visitor can extract strings via DevTools
-
-**Backend code is private:**
-```javascript
-// Safe to put secrets here
-const API_KEY = process.env.STRIPE_API_KEY
-const DB_PASSWORD = process.env.DATABASE_PASSWORD
-```
-- `process.env` only exists on the server
-- Values are never serialized and sent to browsers
-- Even if the server is hacked, environment variables live in memory, not source code
+- Replace the in-memory user store with PocketHost or another persistent DB.
+- Hash passwords with `bcrypt`/`argon2` before storing them.
+- Rotate sessions (new cookie per login) and add inactivity timeouts.
+- Enable rate limiting (`express-rate-limit`) on `/api/login` and `/api/register`.
 
 ---
 
-## 8. Deployment & DevOps to Vercel
+## 10. Deployment & DevOps (Vercel + Render)
 
 ### Local Development Workflow
 
 **Terminal 1: Backend (Node.js)**
 ```bash
 cd backend
-npm install  # First time or after updating package.json
-npm start    # Starts server on http://localhost:3001
+npm install           # once
+npm start             # http://localhost:3001
 ```
 
 **Terminal 2: Frontend (Vite)**
 ```bash
 cd frontend
 npm install
-npm run dev  # Starts Vite dev server on http://localhost:5173
+npm run dev           # http://localhost:5173
 ```
 
-Vite proxies `/api/*` requests to the backend; no CORS errors in development.
+Vite's dev proxy forwards `/api/*` to `localhost:3001`, so cookies survive and no CORS preflight appears during development.
 
-### Building for Production
+### Building the Frontend Bundle
 
-**Frontend build (Vite):**
 ```bash
 cd frontend
-npm run build  # Outputs optimized bundle to dist/
+npm run build   # emits dist/ with hashed assets
 ```
 
-This process:
-1. Minifies JavaScript (reduces size ~70%)
-2. Tree-shakes unused code
-3. Code-splits for lazy loading
-4. Hashes filenames for caching: `index-abc123.js`
-5. Outputs static HTML, CSS, JS ready for CDN
+The build output is uploaded to Vercel's CDN. `frontend/vercel.json` ensures requests to `/api/:path*` are transparently rewritten to the Render backend:
 
-**Configuration in vercel.json:**
 ```json
 {
-  "buildCommand": "cd frontend && npm run build",
-  "outputDirectory": "frontend/dist",
-  "env": {
-    "VITE_API_URL": "@api_url"
-  }
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://securenote-backend.onrender.com/api/:path*" }
+  ]
 }
 ```
 
-### Deployment to Vercel (Serverless)
+Because the browser only ever talks to `https://secure-note-66010309.vercel.app`, the `Set-Cookie` header emitted by Render ends up stored for the Vercel domain. That keeps the session cookie on a single origin while still letting Render perform the heavy lifting.
 
-**Step 1: Push to GitHub**
-```bash
-git init
-git add .
-git commit -m "Initial commit"
-git push origin main
-```
+### Frontend Deployment Steps (Vercel)
 
-**Step 2: Connect GitHub to Vercel**
-- vercel.com → "New Project" → select repository
-- Vercel automatically detects `vercel.json` configuration
+1. Push the repo to GitHub.
+2. `New Project` → select repository → set project root to `frontend/`.
+3. Build command `npm run build`; Output directory `dist`.
+4. No environment variables are required for the frontend because `API_BASE='/api'` and rewrites handle routing.
+5. Trigger a deploy; Vercel issues an HTTPS URL with automatic CDN caching.
 
-**Step 3: Environment Variables**
-- Vercel Dashboard → Project Settings → Environment Variables
-- Set `SECRET_TOKEN` and `POCKETHOST_TOKEN`
-- These are injected at **build time** and **runtime** (no .env file needed)
+### Backend Deployment Steps (Render Web Service)
 
-**Step 4: Backend Serverless (Functions)**
+1. Create a new **Web Service** from the same GitHub repo, but set the root directory to `backend/`.
+2. Build command: `npm install`.
+3. Start command: `node server.js`.
+4. Add a health check (`/api/notes` works after authentication) or rely on Render's internal ping.
+5. Configure environment variables:
 
-Vercel converts `backend/server.js` into serverless functions:
-```
-backend/api/*.js → Deploys as /api/* endpoints
-```
+| Variable       | Example Value                                   | Purpose |
+|----------------|--------------------------------------------------|---------|
+| `PORT`         | `3001`                                           | Render injects its own port; code falls back to 3001 locally. |
+| `POCKETHOST_TOKEN` | `pb_XXXXXXXXXXXXXXXXXXXX`                    | Authenticates server-to-server requests to PocketHost. |
+| `FRONTEND_URL` | `https://secure-note-66010309.vercel.app`        | Powers CORS so only the deployed frontend can send cookies. |
 
-**Example serverless function:**
-```javascript
-// backend/api/notes.js
-export default async (req, res) => {
-  if (req.method === 'POST') {
-    const auth = req.headers.authorization
-    if (auth !== process.env.SECRET_TOKEN) {
-      return res.status(401).json({ error: 'Unauthorized' })
-    }
-    
-    // Process request...
-    return res.status(201).json(newNote)
-  }
-}
-```
+Render exposes the service at `https://securenote-backend.onrender.com`. That URL is the target of the Vercel rewrite shown above.
 
-### Production URLs
+### Production URLs & Routing
 
-| Environment | Frontend URL         | Backend URL                |
-|-------------|----------------------|----------------------------|
-| Local       | http://localhost:5173  | http://localhost:3001        |
-| Production  | https://secure-note-66010309.vercel.app | https://securenote-backend.onrender.com |
-
-The frontend and backend are **on the same domain** in production, eliminating CORS issues.
+| Environment | Frontend | Backend | Notes |
+|-------------|----------|---------|-------|
+| Local       | http://localhost:5173 | http://localhost:3001 | Vite dev proxy; direct cookie exchange. |
+| Production  | https://secure-note-66010309.vercel.app | https://securenote-backend.onrender.com | Browser hits `/api/*` on Vercel; Vercel rewrites to Render, so cookies are scoped to the Vercel domain while compute runs on Render. |
 
 ### Caching Strategy (Browser & CDN)
 
-**Static assets (images, CSS):**
-- Hashed filenames: `style-abc123.css`
-- Browser cache: 1 year (immutable)
-- If content changes, hash changes, browser fetches new version
-
-**HTML entry point:**
-- No hash, always cache-busted
-- Browser cache: 5 minutes or no-cache
-- Ensures users get latest JavaScript links
-
-**API responses:**
-- No caching (each request is fresh)
-- Or cache with `Cache-Control: max-age=60` for short TTL
+- **Static assets**: Fingerprinted filenames (`index-<hash>.js`) get `Cache-Control: public, max-age=31536000, immutable` via Vercel.
+- **HTML entry point**: Served with `max-age=0` so clients always fetch the latest bundle references.
+- **API responses**: Marked `Cache-Control: no-store` so sensitive note data is never cached by intermediaries.
 
 ---
 
-## 9. Error Handling & Edge Cases
+## 11. Error Handling & Edge Cases
 
 ### Frontend Error Boundaries
 
@@ -976,23 +895,21 @@ useEffect(() => {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/notes', {
-        headers: { Authorization: token }
-      })
+      const res = await fetch('/api/notes', { credentials: 'include' })
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}: ${res.statusText}`)
       }
       const data = await res.json()
       setNotes(data)
     } catch (err) {
-      setError(err.message)  // Display to user
+      setError(err.message)
     } finally {
       setLoading(false)
     }
   }
   
   fetchData()
-}, [token])
+}, [])
 ```
 
 **Pattern 2: Try-catch in event handler**
@@ -1002,7 +919,7 @@ const handleDelete = async (noteId) => {
   try {
     const res = await fetch(`/api/notes/${noteId}`, {
       method: 'DELETE',
-      headers: { Authorization: token }
+      credentials: 'include',
     })
     if (!res.ok) throw new Error('Failed to delete')
     
@@ -1033,7 +950,7 @@ app.use((err, req, res, next) => {
 
 **Validating request data:**
 ```javascript
-app.post('/api/notes', requireAuth, (req, res) => {
+app.post('/api/notes', requireSession, (req, res) => {
   const { title, content } = req.body
   
   if (!title || title.trim().length === 0) {
@@ -1077,7 +994,7 @@ try {
 |-----------|---------|----------|
 | Network offline | Fetch never resolves | Timeout + offline detection (`navigator.onLine`) |
 | Backend down | 500 error | Display user-friendly message, retry button |
-| Token expired | 401 response | Redirect to login, clear state |
+| Session expired | 401 response | Redirect to login, clear `username` state |
 | Duplicate submission | User clicks Save twice | Disable button while `saving === true` |
 | Stale data | User's local state out of sync | Re-fetch on tab focus via `visibilitychange` |
 | Race conditions | Request A finishes after B | Use cleanup functions or `AbortController` |
@@ -1100,6 +1017,7 @@ const fetchNotes = async () => {
   abortControllerRef.current = new AbortController()
   try {
     const res = await fetch('/api/notes', {
+      credentials: 'include',
       signal: abortControllerRef.current.signal
     })
     // ...
@@ -1118,31 +1036,7 @@ useEffect(() => {
 
 ---
 
-## Bonus Features
-
-### +15 pts: PocketHost Data Persistence
-
-Notes are stored in a hosted PocketBase instance via the backend proxy. Notes survive server restarts. The architecture:
-
-```
-Browser → POST /api/notes (Authorization: SECRET_TOKEN)
-       → Express validates → proxies to PocketHost (Bearer: POCKETHOST_TOKEN)
-       → PocketHost stores record → returns new note
-       → Express returns 201 → React updates state
-```
-
-The frontend never knows PocketHost exists. The `POCKETHOST_TOKEN` is only ever in `process.env`.
-
-### +5 pts: Loading State
-
-- **Skeleton cards** shimmer during initial `fetchNotes()` via `@keyframes shimmer`
-- **Inline spinner** on the Save button during POST requests
-- **Optimistic delete** with inline confirm dialog before the request fires
-- All loading states managed via React `useState` (`loading`, `deleting`)
-
----
-
-## 10. Enhanced Features & Bonus Implementations
+## 12. Enhanced Features & Bonus Implementations
 
 Beyond the core requirements, SecureNote includes several enhanced features that improve usability and demonstrate advanced development practices:
 
@@ -1152,18 +1046,26 @@ The initial specification only required Create, **Read**, and **Delete**. We add
 
 **Backend Implementation (server.js):**
 ```javascript
-app.patch('/api/notes/:id', checkAuth, async (req, res) => {
+app.patch('/api/notes/:id', requireSession, async (req, res) => {
   const { title, content } = req.body
-  if (!title?.trim() || !content?.trim()) {
-    return res.status(400).json({ error: 'Title and content required' })
+  if (!title && !content) {
+    return res.status(400).json({ error: 'At least one field must be provided' })
   }
-  
-  const response = await fetch(`${POCKETHOST_BASE}/${id}`, {
+
+  const updateData = {}
+  if (title !== undefined) updateData.title = title
+  if (content !== undefined) updateData.content = content
+
+  const response = await fetch(`${POCKETHOST_BASE}/${req.params.id}`, {
     method: 'PATCH',
-    headers: pockethostHeaders(),
-    body: JSON.stringify({ title, content })
+    headers: phHeaders,
+    body: JSON.stringify(updateData),
   })
-  
+
+  if (response.status === 404) {
+    return res.status(404).json({ error: 'Not Found' })
+  }
+
   const updated = await response.json()
   res.json(updated)
 })
@@ -1285,7 +1187,7 @@ The application is deployed on **Vercel**, a serverless platform optimized for N
   "buildCommand": "npm run build",
   "outputDirectory": "frontend/.vercel/output",
   "env": {
-    "FRONTEND_URL": "https://secure-note-app.vercel.app"
+    "FRONTEND_URL": "https://secure-note-66010309.vercel.app"
   }
 }
 ```
@@ -1298,65 +1200,8 @@ The application is deployed on **Vercel**, a serverless platform optimized for N
 - Global CDN distribution
 - Zero-downtime deployments
 
-Live URL: `https://secure-note-app.vercel.app`
+Live URL: https://secure-note-66010309.vercel.app
 
 ---
 
-## Conclusion: Key Takeaways
 
-SecureNote demonstrates **essential full-stack web development concepts** that appear in every production application:
-
-### Architectural Insights
-
-1. **Dual Runtimes:** JavaScript exists in two completely different environments (browser and Node) with distinct APIs and capabilities. Understanding this separation is foundational to full-stack development.
-
-2. **Unidirectional Data Flow:** Props flow down from parent to child, actions flow up through callbacks. This predictable pattern prevents state inconsistencies and makes debugging straightforward.
-
-3. **Separation of Concerns:** Frontend handles UI and user interaction, backend handles business logic and security. The API contract between them (HTTP requests/responses) is the critical boundary.
-
-4. **Secret Management:** Credentials and sensitive data absolutely must live on the backend in environment variables, never in frontend code. This is non-negotiable even for "simple" applications.
-
-### Technical Mastery
-
-The implementation covers:
-- **React fundamentals:** useState, useEffect, component lifecycle, Virtual DOM reconciliation
-- **HTTP protocol:** Verbs (GET/POST/DELETE), status codes, headers, request/response cycle
-- **Backend patterns:** Middleware, authorization, data validation, error handling
-- **DevOps:** Local development with proxy forwarding, production deployment to serverless
-- **Security practices:** Token-based authentication, HTTPS in production, CORS handling, input validation
-
-### Production Readiness
-
-This architecture scales because:
-- **State is predictable** — unidirectional flow prevents race conditions and hard-to-debug bugs
-- **Errors are handled gracefully** — try-catch blocks, error boundaries, and user feedback
-- **Secrets are protected** — environment variables ensure credentials never touch untrusted clients
-- **Deployment is automated** — Vercel builds, deploys, and scales without manual intervention
-- **Data persists** — PocketHost integration demonstrates real-world data backend integration
-
-### Real-World Extensions
-
-To evolve SecureNote for production:
-- **Authentication:** Replace simple password with JWT tokens and refresh rotation
-- **Persistence:** Upgrade to PostgreSQL or MongoDB for scalability
-- **Authorization:** Implement role-based access control (RBAC) per user
-- **Caching:** Add Redis for frequently accessed data and rate limiting
-- **Testing:** Add unit tests (Jest), integration tests (React Testing Library), and E2E tests (Cypress)
-- **Monitoring:** Integrate Sentry for error tracking and LogRocket for session replay
-- **Performance:** Lazy load components, optimize bundle size, implement image optimization
-
-### Why This Matters
-
-This assignment encompasses the **entire software development lifecycle** in miniature:
-- Requirements analysis (what should the app do?)
-- Architecture design (how should components communicate?)
-- Implementation (code the solution)
-- Security hardening (protect user data)
-- Deployment (ship to production)
-- Maintenance (handle errors and edge cases)
-
-Every modern web application—from startups to tech giants—follows these same principles. SecureNote proves you understand them deeply.
-
----
-
-**Report Word Count: ~10,000+** | **Total Sections: 10 + Conclusion** | **Code Examples: 60+** | **Diagrams: 4+**
