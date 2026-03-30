@@ -2,27 +2,37 @@
  * LoginPage.jsx — Split-screen auth page
  * Runtime: Browser | Virtual DOM: React reconciler
  */
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { API_BASE } from '../config'
 import loginIllustration from '../assets/login-illustration.svg'
-
-const QUOTES = [
-  { text: 'Your thoughts, kept safe.', attr: 'SecureNote' },
-  { text: 'Write without worry.', attr: 'SecureNote' },
-  { text: 'Private by design.', attr: 'SecureNote' },
-]
 
 export default function LoginPage({ onLogin, onNavigate }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [show, setShow]         = useState(false)
-  const [loading, setLoading]   = useState(false)
-  const [error, setError]       = useState('')
+  const [show, setShow] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
-  const [isSignUp, setIsSignUp] = useState(false)  // Toggle between Login/Sign Up
-  const [quoteIdx]              = useState(() => Math.floor(Math.random() * QUOTES.length))
-  const quote = QUOTES[quoteIdx]
+  const [isSignUp, setIsSignUp] = useState(false)
+
+  const clearError = useCallback(() => setError(''), [])
+  const handleInputChange = useCallback((setter) => (e) => {
+    setter(e.target.value)
+    clearError()
+  }, [clearError])
+
+  const toggleSignUp = useCallback(() => {
+    setIsSignUp(prev => !prev)
+    setError('')
+    if (isSignUp) setPassword('')
+    if (isSignUp) setConfirmPassword('')
+  }, [isSignUp])
+
+  const handleNavigate = useCallback((page) => {
+    onNavigate(page)
+    setMenuOpen(false)
+  }, [onNavigate])
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -31,22 +41,15 @@ export default function LoginPage({ onLogin, onNavigate }) {
       return setError('Please enter both username and password.')
     }
 
-    if (isSignUp) {
-      if (!confirmPassword.trim()) {
-        return setError('Please confirm your password.')
-      }
-      if (password !== confirmPassword) {
-        return setError('Passwords do not match.')
-      }
+    if (isSignUp && (!confirmPassword.trim() || password !== confirmPassword)) {
+      return setError(password !== confirmPassword ? 'Passwords do not match.' : 'Please confirm your password.')
     }
 
     setError('')
     setLoading(true)
     
-    const endpoint = isSignUp ? '/register' : '/login'
-    
     try {
-      const res = await fetch(`${API_BASE}${endpoint}`, {
+      const res = await fetch(`${API_BASE}${isSignUp ? '/register' : '/login'}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -56,56 +59,58 @@ export default function LoginPage({ onLogin, onNavigate }) {
       
       if (!res.ok) {
         const data = await res.json()
+        
+        // Check for duplicate username error
+        if (isSignUp && (res.status === 409 || data.message?.toLowerCase().includes('already') || data.message?.toLowerCase().includes('exists'))) {
+          throw new Error(`Username "${username.trim()}" already exists. Please choose a different username.`)
+        }
+        
         throw new Error(data.message || `${isSignUp ? 'Sign up' : 'Login'} failed: ${res.status}`)
       }
       
-      const data = await res.json()
-      
       if (isSignUp) {
-        // After sign up, show success and switch to login
-        setError('')
         setUsername('')
         setPassword('')
         setConfirmPassword('')
         setIsSignUp(false)
       } else {
-        // Login successful
         onLogin(username.trim())
       }
     } catch (err) {
-      if (err.name === 'TimeoutError' || err.name === 'AbortError') {
-        setError('Server is not responding. Is the backend running?')
-      } else if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-        setError('Cannot reach the backend. Run: cd backend && npm start')
-      } else {
-        setError(err.message)
-      }
+      const errorMsg = 
+        err.name === 'TimeoutError' || err.name === 'AbortError' ? 'Server is not responding. Is the backend running?' :
+        err.message.includes('Failed to fetch') || err.message.includes('NetworkError') ? 'Cannot reach the backend. Run: cd backend && npm start' :
+        err.message
+      setError(errorMsg)
     } finally {
       setLoading(false)
     }
   }
 
+  const navLinks = ['Home', 'About', 'Contact'].map(page => 
+    ({ label: page, page: page.toLowerCase() })
+  )
+  const isFormValid = username && password && (!isSignUp || confirmPassword)
+  const submitDisabled = loading || !isFormValid
+
   return (
     <div className="login-root" style={{ backgroundImage: `url(${loginIllustration})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
-
       {/* ── Navbar ── */}
       <nav style={s.navbar}>
         <div style={s.navContent}>
-          {/* Logo */}
           <div style={s.navLogo}>
             <HeartIcon color="#1C1A19" />
             <span style={s.navLogoText}>SecureNote</span>
           </div>
 
-          {/* Nav Links (Desktop) */}
           <div className="nav-links-desktop" style={s.navLinksDesktop}>
-            <button onClick={() => onNavigate('home')} style={s.navLink}>Home</button>
-            <button onClick={() => onNavigate('about')} style={s.navLink}>About</button>
-            <button onClick={() => onNavigate('contact')} style={s.navLink}>Contact</button>
-            <button style={s.navActionBtn}>Log In</button>
+            {navLinks.map(link => (
+              <button key={link.page} onClick={() => onNavigate(link.page)} style={s.navLink}>
+                {link.label}
+              </button>
+            ))}
           </div>
 
-          {/* Hamburger Menu (Mobile) */}
           <button 
             className="nav-hamburger"
             onClick={() => setMenuOpen(!menuOpen)} 
@@ -116,21 +121,24 @@ export default function LoginPage({ onLogin, onNavigate }) {
           </button>
         </div>
 
-        {/* Mobile Menu */}
         {menuOpen && (
           <div className="nav-mobile-menu" style={s.mobileMenu}>
-            <button onClick={() => { onNavigate('home'); setMenuOpen(false); }} style={s.mobileLink}>Home</button>
-            <button onClick={() => { onNavigate('about'); setMenuOpen(false); }} style={s.mobileLink}>About</button>
-            <button onClick={() => { onNavigate('contact'); setMenuOpen(false); }} style={s.mobileLink}>Contact</button>
-            <button style={s.mobileActionBtn}>Log In</button>
+            {navLinks.map(link => (
+              <button 
+                key={link.page} 
+                onClick={() => handleNavigate(link.page)} 
+                style={s.mobileLink}
+              >
+                {link.label}
+              </button>
+            ))}
           </div>
         )}
       </nav>
 
       {/* ── Form panel (centered) ── */}
-      <div className="login-right" style={{ ...s.loginContainer }}>
+      <div className="login-right" style={s.loginContainer}>
         <div style={s.card}>
-
           <div style={s.cardHeader}>
             <h1 style={s.cardTitle}>{isSignUp ? 'Create your account' : 'How was your day?'}</h1>
             <p style={s.cardSub}>
@@ -141,63 +149,49 @@ export default function LoginPage({ onLogin, onNavigate }) {
           </div>
 
           <form onSubmit={handleSubmit} style={s.form}>
-            <div style={s.fieldGroup}>
-              <label style={s.label} htmlFor="uname">Username</label>
-              <div style={s.inputRow}>
-                <span style={s.inputPre}><UserIcon /></span>
-                <input
-                  id="uname"
-                  type="text"
-                  value={username}
-                  onChange={e => { setUsername(e.target.value); setError('') }}
-                  placeholder="Enter username"
-                  style={{ ...s.input, ...(error ? s.inputErr : {}) }}
-                  autoComplete="off"
-                  spellCheck={false}
-                />
-              </div>
-            </div>
+            <InputField
+              label="Username"
+              id="uname"
+              type="text"
+              value={username}
+              onChange={handleInputChange(setUsername)}
+              placeholder="Enter username"
+              icon={<UserIcon />}
+              error={error}
+            />
 
-            <div style={s.fieldGroup}>
-              <label style={s.label} htmlFor="pwd">Password</label>
-              <div style={s.inputRow}>
-                <span style={s.inputPre}><LockIcon /></span>
-                <input
-                  id="pwd"
-                  type={show ? 'text' : 'password'}
-                  value={password}
-                  onChange={e => { setPassword(e.target.value); setError('') }}
-                  placeholder="Enter password"
-                  style={{ ...s.input, ...(error ? s.inputErr : {}) }}
-                  autoComplete="off"
-                  spellCheck={false}
-                />
-                <button type="button" onClick={() => setShow(p => !p)} style={s.eyeBtn} aria-label="Toggle visibility">
+            <InputField
+              label="Password"
+              id="pwd"
+              type={show ? 'text' : 'password'}
+              value={password}
+              onChange={handleInputChange(setPassword)}
+              placeholder="Enter password"
+              icon={<LockIcon />}
+              error={error}
+              eyeBtn={
+                <button type="button" onClick={() => setShow(!show)} style={s.eyeBtn} aria-label="Toggle visibility">
                   {show ? <EyeOffIcon /> : <EyeIcon />}
                 </button>
-              </div>
-            </div>
+              }
+            />
 
             {isSignUp && (
-              <div style={s.fieldGroup}>
-                <label style={s.label} htmlFor="confirm">Confirm Password</label>
-                <div style={s.inputRow}>
-                  <span style={s.inputPre}><LockIcon /></span>
-                  <input
-                    id="confirm"
-                    type={show ? 'text' : 'password'}
-                    value={confirmPassword}
-                    onChange={e => { setConfirmPassword(e.target.value); setError('') }}
-                    placeholder="Confirm password"
-                    style={{ ...s.input, ...(error ? s.inputErr : {}) }}
-                    autoComplete="off"
-                    spellCheck={false}
-                  />
-                  <button type="button" onClick={() => setShow(p => !p)} style={s.eyeBtn} aria-label="Toggle visibility">
+              <InputField
+                label="Confirm Password"
+                id="confirm"
+                type={show ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={handleInputChange(setConfirmPassword)}
+                placeholder="Confirm password"
+                icon={<LockIcon />}
+                error={error}
+                eyeBtn={
+                  <button type="button" onClick={() => setShow(!show)} style={s.eyeBtn} aria-label="Toggle visibility">
                     {show ? <EyeOffIcon /> : <EyeIcon />}
                   </button>
-                </div>
-              </div>
+                }
+              />
             )}
 
             {error && (
@@ -208,40 +202,55 @@ export default function LoginPage({ onLogin, onNavigate }) {
 
             <button
               type="submit"
-              disabled={loading || !username || !password || (isSignUp && !confirmPassword)}
-              style={{ ...s.submitBtn, opacity: (!username || !password || (isSignUp && !confirmPassword) || loading) ? 0.55 : 1, cursor: (!username || !password || (isSignUp && !confirmPassword) || loading) ? 'not-allowed' : 'pointer' }}
+              disabled={submitDisabled}
+              style={{ ...s.submitBtn, opacity: submitDisabled ? 0.55 : 1, cursor: submitDisabled ? 'not-allowed' : 'pointer' }}
             >
               {loading
                 ? <><Spinner /> <span>{isSignUp ? 'Creating account…' : 'Logging in…'}</span></>
-                : <><span>{isSignUp ? 'Create Account' : 'Log In'}</span> </>
+                : <span>{isSignUp ? 'Create Account' : 'Log In'}</span>
               }
             </button>
           </form>
 
-          {!isSignUp && (
-            <p style={s.hintText}>
-              Don't have an account? <button 
-                type="button"
-                onClick={() => { setIsSignUp(true); setError('') }}
-                style={s.switchTabBtn}
-              >
-                Sign up
-              </button>
-            </p>
-          )}
-
-          {isSignUp && (
-            <p style={s.hintText}>
-              Already have an account? <button 
-                type="button"
-                onClick={() => { setIsSignUp(false); setError(''); setPassword(''); setConfirmPassword('') }}
-                style={s.switchTabBtn}
-              >
-                Log in
-              </button>
-            </p>
-          )}
+          <p style={s.hintText}>
+            {!isSignUp ? (
+              <>Don't have an account? </>
+            ) : (
+              <>Already have an account? </>
+            )}
+            <button 
+              type="button"
+              onClick={toggleSignUp}
+              style={s.switchTabBtn}
+            >
+              {!isSignUp ? 'Sign up' : 'Log in'}
+            </button>
+          </p>
         </div>
+      </div>
+    </div>
+  )
+}
+
+/* ── Input Field Component ── */
+function InputField({ label, id, type, value, onChange, placeholder, icon, error, eyeBtn }) {
+  const inputStyle = { ...s.input, ...(error ? s.inputErr : {}) }
+  return (
+    <div style={s.fieldGroup}>
+      <label style={s.label} htmlFor={id}>{label}</label>
+      <div style={s.inputRow}>
+        <span style={s.inputPre}>{icon}</span>
+        <input
+          id={id}
+          type={type}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          style={inputStyle}
+          autoComplete="off"
+          spellCheck={false}
+        />
+        {eyeBtn}
       </div>
     </div>
   )
@@ -289,7 +298,7 @@ const HamburgerIcon = () => (
   </svg>
 )
 
-/* ── Styles (non-responsive only — responsive via CSS classes) ── */
+/* ── Styles ── */
 const s = {
   navbar: { position:'fixed', top:0, left:0, right:0, background:'rgba(255,255,255,0.95)', backdropFilter:'blur(10px)', borderBottom:'1px solid rgba(0,0,0,0.05)', zIndex:100 },
   navContent: { maxWidth:'1200px', margin:'0 auto', padding:'0 1.5rem', display:'flex', alignItems:'center', justifyContent:'space-between', height:'64px' },
@@ -297,28 +306,10 @@ const s = {
   navLogoText: { fontFamily:'var(--font-serif)', fontSize:'1.2rem', fontWeight:600, color:'#3D3228', letterSpacing:'0.02em' },
   navLinksDesktop: { display:'flex', alignItems:'center', gap:'2rem' },
   navLink: { fontSize:'0.95rem', color:'#6B5838', textDecoration:'none', fontWeight:500, transition:'color 0.2s', cursor:'pointer', background:'none', border:'none', fontFamily:'var(--font-sans)' },
-  navActionBtn: { background:'#B8956A', color:'white', border:'none', padding:'0.6rem 1.5rem', borderRadius:'8px', fontSize:'0.9rem', fontWeight:600, cursor:'pointer', transition:'background 0.2s' },
   hamburger: { display:'flex', alignItems:'center', justifyContent:'center', background:'none', border:'none', cursor:'pointer', color:'#2D251F' },
   mobileMenu: { display:'flex', flexDirection:'column', gap:'1rem', padding:'1rem 1.5rem', borderTop:'1px solid rgba(0,0,0,0.05)', background:'rgba(255,255,255,0.98)' },
   mobileLink: { fontSize:'0.95rem', color:'#5A4E43', textDecoration:'none', fontWeight:500, cursor:'pointer', background:'none', border:'none', fontFamily:'var(--font-sans)' },
-  mobileActionBtn: { background:'#B8956A', color:'white', border:'none', padding:'0.6rem 1.5rem', borderRadius:'8px', fontSize:'0.9rem', fontWeight:600, cursor:'pointer', width:'100%' },
-
-  leftContent: { position:'relative', zIndex:1, display:'flex', flexDirection:'column', gap:'2.5rem', width:'100%' },
-  leftLogo: { display:'flex', alignItems:'center', gap:'0.6rem' },
-  leftLogoText: { fontFamily:'var(--font-serif)', fontSize:'1.3rem', fontWeight:500, color:'var(--cream)', letterSpacing:'0.03em' },
-  dividerLines: { display:'flex', flexDirection:'column', gap:'8px' },
-  dividerLine: { height:'1px', background:'var(--brown-light)', borderRadius:'1px' },
-  quote: { display:'flex', flexDirection:'column', gap:'1rem', animation:'fadeUp 0.7s var(--ease) 0.1s both' },
-  quoteText: { fontFamily:'var(--font-serif)', fontSize:'clamp(1.5rem,3vw,2.1rem)', fontWeight:400, fontStyle:'italic', color:'var(--cream)', lineHeight:1.35 },
-  quoteAttr: { fontSize:'0.72rem', letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--brown-light)', fontStyle:'normal' },
-  leftFooter: { display:'flex', gap:'8px' },
-  dot: { width:6, height:6, borderRadius:'50%', background:'var(--brown-light)', opacity:0.5, display:'block', animation:'pulse-dot 2s ease-in-out infinite' },
-  circle: { position:'absolute', borderRadius:'50%', border:'1px solid rgba(196,168,130,0.15)', pointerEvents:'none' },
-
-  /* Mobile logo — only visible when left panel is hidden */
-  mobileLogoWrap: { display:'flex', alignItems:'center', gap:'0.5rem', marginBottom:'0.5rem' },
-  mobileLogoText: { fontFamily:'var(--font-serif)', fontSize:'1.2rem', fontWeight:500, color:'var(--charcoal)' },
-
+  
   card: { width:'100%', maxWidth:'380px', display:'flex', flexDirection:'column', gap:'2rem', animation:'fadeUp 0.5s var(--ease) both', background:'white', padding:'2rem', borderRadius:'12px', boxShadow:'0 10px 40px rgba(0,0,0,0.1)', marginTop:'80px' },
   cardHeader: { display:'flex', flexDirection:'column', gap:'0.35rem' },
   cardTitle: { fontFamily:'var(--font-serif)', fontSize:'clamp(1.6rem,5vw,2.1rem)', fontWeight:500, color:'var(--charcoal)', lineHeight:1.15 },
@@ -335,8 +326,6 @@ const s = {
   errMsg: { display:'flex', alignItems:'center', gap:'0.4rem', fontSize:'0.78rem', color:'var(--red)', animation:'slideDown 0.2s ease' },
   submitBtn: { display:'flex', alignItems:'center', justifyContent:'center', gap:'0.5rem', background:'#B8956A', color:'white', border:'none', borderRadius:'var(--radius-sm)', padding:'0.875rem 1.5rem', fontSize:'0.9rem', fontWeight:500, fontFamily:'var(--font-sans)', transition:'background 0.2s, box-shadow 0.2s', boxShadow:'var(--shadow-sm)', width:'100%' },
   loginContainer: { display:'flex', alignItems:'center', justifyContent:'center', width:'100%', minHeight:'100vh', position:'fixed', inset:0, zIndex:10 },
-  arrow: { fontSize:'1.1rem' },
   hintText: { fontSize:'0.75rem', color:'var(--charcoal-4)', lineHeight:1.6 },
   switchTabBtn: { background:'none', border:'none', color:'#8B6F47', fontWeight:600, fontSize:'0.75rem', cursor:'pointer', textDecoration:'underline', padding:0 },
-  code: { fontFamily:'monospace', background:'var(--cream-2)', padding:'0.1em 0.4em', borderRadius:'3px', fontSize:'0.85em', color:'var(--brown-dark)' },
 }

@@ -2,19 +2,21 @@
 
 A modern, full-stack secure notes web application built with **React** (frontend) and **Node.js/Express** (backend) with cloud persistence via **PocketHost**.
 
-**Key Features:**
-- Token-based authentication
-- Full CRUD operations (Create, Read, Update, Delete)
-- Real-time search by title and content
-- Sort notes by date (newest/oldest) or name (A-Z)
-- Timestamps with full date and time display
-- Cloud persistence with PocketHost (survives server restart)
-- Loading states with skeleton loaders during API calls
-- Warm, cohesive design with 2 consolidated fonts (Cormorant Garamond + Raleway)
-- Real-time UI updates with React Virtual DOM
-- Deployed on Vercel with HTTPS
+## Key Features
 
-**Live Demo:** [https://secure-note-app.vercel.app](https://secure-note-app.vercel.app)
+- **Token-based Authentication** with duplicate username detection
+- **Full CRUD Operations** (Create, Read, Update, Delete)
+- **Real-time Search** by title and content
+- **Smart Sorting** — date (newest/oldest) or name (A-Z)
+- **Full Timestamps** with date and time display
+- **Cloud Persistence** with PocketHost (survives server restart)
+- **Loading States** with skeleton loaders
+- **Professional Design** — 2 consolidated fonts (Cormorant Garamond + Raleway)
+- **Efficient Code** — Reusable components, optimized rendering
+- **Deployed on Vercel** with HTTPS
+
+**Live Demo:** [https://secure-note-66010309.vercel.app](https://secure-note-66010309.vercel.app)  
+**Frontend Dashboard:** [https://vercel.com/tiwaporn15s-projects/secure-note-66010309](https://vercel.com/tiwaporn15s-projects/secure-note-66010309)
 
 ---
 
@@ -346,10 +348,10 @@ npm list
 
 ### Base URL
 
-| Environment | URL |
-|-------------|-----|
-| **Development** | `http://localhost:3001` (proxied from `localhost:5173/api`) |
-| **Production** | `https://secure-note-app.vercel.app/api` |
+| Environment | Frontend | Backend |
+|-------------|----------|----------|
+| **Development** | http://localhost:5173 | http://localhost:3001 |
+| **Production** | https://secure-note-66010309.vercel.app | https://securenote-backend.onrender.com |
 
 ### Authentication
 
@@ -361,7 +363,7 @@ Authorization: <SECRET_TOKEN>
 
 Example with curl:
 ```bash
-curl -H "Authorization: SecureNote-S3cr3t-K3y-2025" http://localhost:3001/api/notes
+curl -H "Authorization: SecureNote-S3cr3t-K3y-2025" https://securenote-backend.onrender.com/api/notes
 ```
 
 ### Endpoints
@@ -372,7 +374,7 @@ Validate password and receive token.
 **Request:**
 ```http
 POST /api/auth HTTP/1.1
-Host: localhost:3001
+Host: securenote-backend.onrender.com
 Content-Type: application/json
 
 {
@@ -404,7 +406,7 @@ Retrieve all notes from the database.
 **Request:**
 ```http
 GET /api/notes HTTP/1.1
-Host: localhost:3001
+Host: securenote-backend.onrender.com
 ```
 
 **Response (200 OK):**
@@ -437,7 +439,7 @@ Create a new note (requires authentication).
 **Request:**
 ```http
 POST /api/notes HTTP/1.1
-Host: localhost:3001
+Host: securenote-backend.onrender.com
 Content-Type: application/json
 Authorization: SecureNote-S3cr3t-K3y-2025
 
@@ -481,7 +483,7 @@ Update an existing note (requires authentication).
 **Request:**
 ```http
 PATCH /api/notes/note_001 HTTP/1.1
-Host: localhost:3001
+Host: securenote-backend.onrender.com
 Content-Type: application/json
 Authorization: SecureNote-S3cr3t-K3y-2025
 
@@ -525,7 +527,7 @@ Delete a note by ID (requires authentication).
 **Request:**
 ```http
 DELETE /api/notes/note_001 HTTP/1.1
-Host: localhost:3001
+Host: securenote-backend.onrender.com
 Authorization: SecureNote-S3cr3t-K3y-2025
 ```
 
@@ -679,7 +681,8 @@ dist/
 4. **Deploy**
    - Click "Deploy" button
    - Wait for build to complete (~2 minutes)
-   - Get production URL: `https://secure-note-app.vercel.app`
+   - Frontend live at: **https://secure-note-66010309.vercel.app**
+   - Backend live at: **https://securenote-backend.onrender.com**
 
 ### Local Vercel Testing
 
@@ -706,7 +709,7 @@ vercel dev
 
 ---
 
-## 🔒 Security
+## Security
 
 ### Key Principles
 
@@ -994,7 +997,7 @@ We welcome contributions! Here's how:
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the **MIT License** — see LICENSE file for details.
 
@@ -1002,7 +1005,7 @@ You're free to use, modify, and distribute this project provided you include the
 
 ---
 
-## 💡 Additional Resources
+## Additional Resources
 
 ### Learning Materials
 
@@ -1020,7 +1023,7 @@ You're free to use, modify, and distribute this project provided you include the
 
 ---
 
-## 📞 Support
+## Support
 
 **Have questions?**
 
@@ -1030,7 +1033,7 @@ You're free to use, modify, and distribute this project provided you include the
 
 ---
 
-## ✨ Acknowledgments
+## Acknowledgments
 
 - **React Team** for the amazing frontend library
 - **Express.js** for the simple, flexible backend framework
